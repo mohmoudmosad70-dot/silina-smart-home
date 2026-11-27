@@ -1,0 +1,2721 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Silina — الشقة الموسّعة ويوتيوب والروبوت والإدارة</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, -apple-system, "Segoe UI", Tahoma, Arial, sans-serif;
+      background: #0b0f19;
+      color: #f8fafc;
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+    }
+    #c { display: block; width: 100%; height: 100%; }
+
+    #hud {
+      position: fixed;
+      top: 14px;
+      left: 16px;
+      right: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      pointer-events: none;
+      z-index: 20;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .pill {
+      pointer-events: auto;
+      background: rgba(15, 23, 42, 0.84);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(148, 163, 184, 0.22);
+      border-radius: 999px;
+      padding: 7px 13px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12.5px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+    }
+    .dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: #22c55e;
+      box-shadow: 0 0 10px #22c55e;
+    }
+    .dot.offline { background: #f59e0b; box-shadow: 0 0 10px #f59e0b; }
+
+    .role-badge {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: rgba(59, 130, 246, 0.2);
+      border: 1px solid rgba(96, 165, 250, 0.45);
+      color: #93c5fd;
+    }
+
+    #bottomDock {
+      position: fixed;
+      bottom: 14px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 7px;
+      z-index: 20;
+      pointer-events: none;
+      max-width: 97vw;
+    }
+
+    #interactHint {
+      background: rgba(15, 23, 42, 0.88);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(96, 165, 250, 0.45);
+      border-radius: 999px;
+      padding: 6px 15px;
+      font-size: 12px;
+      color: #e2e8f0;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 100%;
+    }
+
+    #quickBar {
+      pointer-events: auto;
+      background: rgba(15, 23, 42, 0.88);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(148, 163, 184, 0.22);
+      border-radius: 16px;
+      padding: 6px 8px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      flex-wrap: wrap;
+      justify-content: center;
+      max-width: 96vw;
+      max-height: 112px;
+      overflow-y: auto;
+      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45);
+    }
+
+    .btn {
+      background: rgba(30, 41, 59, 0.92);
+      color: #e2e8f0;
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      border-radius: 10px;
+      padding: 5px 9px;
+      font-size: 11.5px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.16s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      white-space: nowrap;
+    }
+    .btn:hover:not(:disabled) { background: rgba(51, 65, 85, 0.98); transform: translateY(-1px); }
+    .btn:disabled { opacity: 0.42; cursor: not-allowed; }
+    .btn.on {
+      background: linear-gradient(135deg, #2563eb, #3b82f6);
+      border-color: #60a5fa;
+      color: #fff;
+      box-shadow: 0 0 12px rgba(59, 130, 246, 0.42);
+    }
+    .btn.ghost {
+      background: rgba(15, 23, 42, 0.6);
+      border-color: rgba(148, 163, 184, 0.35);
+    }
+    .btn.danger {
+      border-color: rgba(239, 68, 68, 0.55);
+      color: #fca5a5;
+    }
+
+    #dashboardDrawer {
+      position: fixed;
+      top: 66px;
+      left: 16px;
+      width: 425px;
+      max-width: calc(100vw - 32px);
+      max-height: calc(100vh - 185px);
+      overflow-y: auto;
+      background: rgba(15, 23, 42, 0.96);
+      backdrop-filter: blur(14px);
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      border-radius: 18px;
+      padding: 14px;
+      z-index: 30;
+      display: none;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.65);
+    }
+    #dashboardDrawer.open { display: block; }
+
+    /* نافذة يوتيوب العائمة */
+    #tvPlayerPanel {
+      position: fixed;
+      top: 66px;
+      right: 16px;
+      width: 410px;
+      max-width: calc(100vw - 32px);
+      background: rgba(15, 23, 42, 0.96);
+      backdrop-filter: blur(14px);
+      border: 1px solid rgba(96, 165, 250, 0.35);
+      border-radius: 18px;
+      padding: 13px;
+      z-index: 32;
+      display: none;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7);
+    }
+    #tvPlayerPanel.open { display: block; }
+    #tvPlayerPanel.theater {
+      top: 50%;
+      left: 50%;
+      right: auto;
+      transform: translate(-50%, -50%);
+      width: 780px;
+      max-width: 95vw;
+      z-index: 45;
+    }
+    .yt-frame-wrap {
+      position: relative;
+      width: 100%;
+      padding-top: 56.25%;
+      background: #020617;
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 9px;
+      border: 1px solid rgba(148, 163, 184, 0.2);
+    }
+    .yt-frame-wrap iframe {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      border: 0;
+    }
+
+    /* نافذة الروبوت المساعد للشخصية */
+    #robotPanel {
+      position: fixed;
+      bottom: 132px;
+      right: 16px;
+      width: 350px;
+      max-width: calc(100vw - 32px);
+      background: rgba(15, 23, 42, 0.96);
+      backdrop-filter: blur(14px);
+      border: 1px solid rgba(56, 189, 248, 0.4);
+      border-radius: 18px;
+      padding: 13px;
+      z-index: 32;
+      display: none;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.65);
+    }
+    #robotPanel.open { display: block; }
+
+    .tab-bar {
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap;
+      margin-bottom: 11px;
+      background: rgba(30, 41, 59, 0.65);
+      padding: 5px;
+      border-radius: 12px;
+    }
+    .tab-btn {
+      flex: 1;
+      min-width: 60px;
+      justify-content: center;
+      padding: 6px 5px;
+      font-size: 11px;
+    }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    .dash-section {
+      background: rgba(30, 41, 59, 0.55);
+      border: 1px solid rgba(148, 163, 184, 0.16);
+      border-radius: 12px;
+      padding: 11px;
+      margin-bottom: 10px;
+    }
+    .dash-title {
+      font-size: 12.5px;
+      font-weight: 700;
+      color: #93c5fd;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 6px;
+    }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+    .stat-box {
+      background: rgba(15, 23, 42, 0.78);
+      border: 1px solid rgba(148, 163, 184, 0.15);
+      border-radius: 10px;
+      padding: 7px;
+      text-align: center;
+    }
+    .stat-num { font-size: 15px; font-weight: 800; color: #38bdf8; }
+    .stat-lbl { font-size: 10.5px; color: #94a3b8; }
+
+    .log-box, .msg-list-box {
+      max-height: 155px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: 11.5px;
+    }
+    .log-row, .msg-card {
+      background: rgba(15, 23, 42, 0.78);
+      padding: 7px 9px;
+      border-radius: 9px;
+      border-right: 3px solid #3b82f6;
+    }
+    .msg-card.warn { border-right-color: #f59e0b; }
+    .msg-card.alert { border-right-color: #ef4444; }
+
+    .user-card, .dev-manage-row {
+      background: rgba(15, 23, 42, 0.78);
+      border: 1px solid rgba(148, 163, 184, 0.15);
+      border-radius: 10px;
+      padding: 7px 9px;
+      margin-bottom: 7px;
+      font-size: 11.5px;
+    }
+    .dev-manage-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 6px;
+    }
+    .dev-manage-list { max-height: 185px; overflow-y: auto; }
+    .user-actions { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; margin-top: 6px; }
+    .cap-pills { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 6px; }
+
+    .mini-input, .mini-select, .mini-textarea {
+      padding: 6px 8px;
+      border-radius: 8px;
+      border: 1px solid rgba(148, 163, 184, 0.28);
+      background: #0f172a;
+      color: #f8fafc;
+      font-size: 11.5px;
+      font-family: inherit;
+    }
+    .mini-textarea {
+      width: 100%;
+      min-height: 54px;
+      resize: vertical;
+      margin-bottom: 7px;
+    }
+
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(2, 6, 23, 0.8);
+      backdrop-filter: blur(8px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 55;
+      padding: 16px;
+    }
+    .overlay.show { display: flex; }
+    .card {
+      background: #0f172a;
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      border-radius: 18px;
+      padding: 22px;
+      width: 100%;
+      max-width: 440px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.65);
+    }
+    .card h3 {
+      font-size: 18px;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .field { margin-bottom: 10px; }
+    .field label { display: block; font-size: 12px; color: #94a3b8; margin-bottom: 4px; }
+    .field input {
+      width: 100%;
+      padding: 9px 12px;
+      border-radius: 10px;
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      background: #1e293b;
+      color: #f8fafc;
+      font-size: 13.5px;
+    }
+    .captcha-box {
+      background: rgba(30, 41, 59, 0.85);
+      border: 1px dashed rgba(96, 165, 250, 0.5);
+      border-radius: 10px;
+      padding: 8px 10px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .captcha-q { font-weight: 700; font-size: 14px; color: #93c5fd; letter-spacing: 0.5px; }
+    .err-msg { color: #f87171; font-size: 12.5px; margin-bottom: 10px; min-height: 18px; }
+
+    #toast {
+      position: fixed;
+      top: 66px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-16px);
+      background: rgba(15, 23, 42, 0.95);
+      border: 1px solid rgba(96, 165, 250, 0.45);
+      color: #f8fafc;
+      padding: 9px 18px;
+      border-radius: 999px;
+      font-size: 13px;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.25s ease;
+      z-index: 60;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.45);
+      max-width: 90vw;
+      text-align: center;
+    }
+    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  </style>
+</head>
+<body>
+  <canvas id="c"></canvas>
+  <div id="toast"></div>
+
+  <div id="hud">
+    <div class="pill">
+      <span class="dot" id="connDot"></span>
+      <strong>Silina Extended</strong>
+      <span id="connText" style="color:#94a3b8;font-size:12px;">متصل</span>
+      <span id="charStatusBadge" class="role-badge">🧍 مستيقظ</span>
+    </div>
+    <div class="pill">
+      <span id="userLabel">👤 زائر</span>
+      <span class="role-badge" id="roleBadge">زائر</span>
+      <button class="btn" id="openTvPanelBtn" title="مشغّل يوتيوب للتلفزيون">📺 يوتيوب</button>
+      <button class="btn" id="openRobotPanelBtn" title="الروبوت المساعد للشخصية">🤖 الروبوت</button>
+      <button class="btn" id="sleepToggleBtn" title="نوم أو استيقاظ الشخصية">😴 نوم</button>
+      <button class="btn" id="inboxBtn" title="رسائل الإدارة">📩 الرسائل <span id="msgCountBadge">(0)</span></button>
+      <button class="btn" id="dashToggleBtn" style="display:none;" title="لوحة الإدارة">🎛️ الإدارة</button>
+      <button class="btn on" id="followBoyBtn" title="تتبع الكاميرا للولد">🚶 تتبع</button>
+      <button class="btn" id="camResetBtn" title="إعادة ضبط الكاميرا">🎥</button>
+      <button class="btn" id="openUserLoginBtn" title="تسجيل دخول المستخدم">🔑 دخول</button>
+      <button class="btn danger" id="logoutBtn" title="خروج">✕</button>
+    </div>
+  </div>
+
+  <!-- لوحة مشغّل يوتيوب الحقيقي -->
+  <aside id="tvPlayerPanel">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+      <strong>📺 مشغّل التلفزيون (YouTube)</strong>
+      <div style="display:flex;gap:4px;">
+        <button class="btn" id="tvTheaterBtn" title="وضع المسرح">🎭</button>
+        <button class="btn" id="closeTvPanelBtn">✕</button>
+      </div>
+    </div>
+
+    <div class="yt-frame-wrap">
+      <iframe
+        id="ytIframe"
+        src="about:blank"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allowfullscreen
+      ></iframe>
+    </div>
+
+    <div style="display:flex;gap:5px;margin-bottom:7px;">
+      <input class="mini-input" type="text" id="ytUrlOrIdInput" placeholder="ضع رابط يوتيوب أو ID (11 حرف)" style="flex:1;" />
+      <button class="btn on" id="applyYtVideoBtn">تشغيل</button>
+    </div>
+
+    <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:7px;">
+      <button class="btn" data-yt-preset="dQw4w9WgXcQ">🎵 موسيقى</button>
+      <button class="btn" data-yt-preset="aqz-KE-bpKQ">🌿 طبيعة 4K</button>
+      <button class="btn" data-yt-preset="jfKfPfyJRdk">🎧 لاهي هادئ</button>
+      <button class="btn" id="tvSleepTimerBtn">⏱️ إطفاء 30د</button>
+    </div>
+
+    <div id="tvTimerStatus" style="font-size:11px;color:#94a3b8;">المؤقت: متوقف</div>
+  </aside>
+
+  <!-- لوحة الروبوت المساعد لتوجيه الشخصية -->
+  <aside id="robotPanel">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+      <strong>🤖 الروبوت المساعد للشخصية</strong>
+      <button class="btn" id="closeRobotPanelBtn">✕</button>
+    </div>
+    <p style="font-size:11.5px;color:#94a3b8;margin-bottom:8px;">أخبر الروبوت ماذا تفعل الشخصية الآن أو اختر أمراً جاهزاً:</p>
+
+    <div style="display:flex;gap:5px;margin-bottom:8px;">
+      <input class="mini-input" type="text" id="robotCommandInput" placeholder="مثال: روح المطبخ / نام / شغل التلفزيون" style="flex:1;" />
+      <button class="btn on" id="sendRobotCommandBtn">إرسال</button>
+    </div>
+
+    <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px;">
+      <button class="btn" data-robot-cmd="روح الصالة">🛋️ الصالة</button>
+      <button class="btn" data-robot-cmd="روح المطبخ">🍽️ المطبخ</button>
+      <button class="btn" data-robot-cmd="روح غرفة النوم">🛏️ النوم</button>
+      <button class="btn" data-robot-cmd="روح المكتب">💻 المكتب</button>
+      <button class="btn" data-robot-cmd="نام">😴 نام</button>
+      <button class="btn" data-robot-cmd="اصحى">☀️ اصحى</button>
+      <button class="btn" data-robot-cmd="شغل التلفزيون">📺 شغل التلفزيون</button>
+      <button class="btn" data-robot-cmd="تجول تلقائي">🔄 تجول</button>
+    </div>
+
+    <div id="robotReplyBox" style="background:rgba(30,41,59,0.75);border-radius:10px;padding:8px;font-size:11.5px;color:#cbd5e1;">
+      جاهز لاستقبال أوامرك وتوجيه الشخصية تلقائياً.
+    </div>
+  </aside>
+
+  <!-- لوحة الإدارة الكاملة -->
+  <aside id="dashboardDrawer">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:9px;">
+      <strong>🎛️ لوحة تحكم الإدارة الكاملة</strong>
+      <button class="btn" id="closeDashBtn">✕</button>
+    </div>
+
+    <div class="tab-bar" id="adminTabBar">
+      <button class="btn tab-btn on" data-tab="users">👥 المستخدمون</button>
+      <button class="btn tab-btn" data-tab="devices">🔌 الأجهزة</button>
+      <button class="btn tab-btn" data-tab="world">🏠 البيئة</button>
+      <button class="btn tab-btn" data-tab="messages">✉️ رسائل</button>
+      <button class="btn tab-btn" data-tab="logs">📜 سجل</button>
+    </div>
+
+    <!-- تبويب المستخدمين الذين دخلوا والخصائص -->
+    <div class="tab-panel active" id="tab-users">
+      <div class="stats-grid" id="usersStatsGrid">
+        <div class="stat-box"><div class="stat-num" id="statTotalUsers">0</div><div class="stat-lbl">إجمالي الحسابات</div></div>
+        <div class="stat-box"><div class="stat-num" id="statOnlineUsers">0</div><div class="stat-lbl">متصل الآن</div></div>
+        <div class="stat-box"><div class="stat-num" id="statLockedUsers">0</div><div class="stat-lbl">مقفول مؤقتاً</div></div>
+      </div>
+
+      <div class="dash-section">
+        <div class="dash-title">
+          <span>➕ إضافة حساب جديد</span>
+          <button class="btn" id="refreshUsersBtn">↻ تحديث</button>
+        </div>
+        <div style="display:flex;gap:5px;flex-wrap:wrap;">
+          <input class="mini-input" type="text" id="newUserName" placeholder="اسم المستخدم" style="flex:1;min-width:85px;" />
+          <input class="mini-input" type="password" id="newUserPass" placeholder="كلمة المرور" style="flex:1;min-width:85px;" />
+          <select class="mini-select" id="newUserRole">
+            <option value="guest">guest</option>
+            <option value="visitor">visitor</option>
+          </select>
+          <button class="btn on" id="createUserBtn">إضافة</button>
+        </div>
+      </div>
+
+      <div class="dash-section">
+        <div class="dash-title"><span>📋 المستخدمون والخصائص والجلسات</span></div>
+        <div id="adminUsersList" style="max-height:240px;overflow-y:auto;"></div>
+      </div>
+
+      <div class="dash-section">
+        <div class="dash-title"><span>🔐 كلمة مرور المشرف والجلسات</span></div>
+        <div class="field">
+          <label>كلمة المرور الحالية</label>
+          <input type="password" id="curPassInput" placeholder="••••••" />
+        </div>
+        <div class="field">
+          <label>كلمة المرور الجديدة</label>
+          <input type="password" id="newPassInput" placeholder="6 أحرف على الأقل" />
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          <button class="btn on" id="changePassBtn" style="flex:1;justify-content:center;">تحديث كلمة المرور</button>
+          <button class="btn danger" id="revokeSessionsBtn">🚫 إبطال جلساتي</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- تبويب الأجهزة -->
+    <div class="tab-panel" id="tab-devices">
+      <div class="dash-section">
+        <div class="dash-title"><span>⚡ تحكم جماعي فوري</span></div>
+        <div style="display:flex;gap:5px;flex-wrap:wrap;">
+          <button class="btn on" id="allLightsOnBtn">💡 كل الإضاءات</button>
+          <button class="btn" id="allOffBtn">🔌 إيقاف الكل</button>
+          <button class="btn" id="awayModeBtn">🛡️ وضع الخروج</button>
+          <button class="btn" id="restoreAllDevicesBtn">♻️ إظهار الأجهزة</button>
+        </div>
+      </div>
+
+      <div class="dash-section">
+        <div class="dash-title"><span>🧩 إزالة / إظهار الأجهزة (14)</span></div>
+        <div class="dev-manage-list" id="adminDevicesList"></div>
+      </div>
+    </div>
+
+    <!-- تبويب البيئة والشخصية -->
+    <div class="tab-panel" id="tab-world">
+      <div class="dash-section">
+        <div class="dash-title"><span>🌤️ إضاءة الجو</span></div>
+        <div style="display:flex;gap:5px;flex-wrap:wrap;">
+          <button class="btn" data-sky="day">☀️ نهار</button>
+          <button class="btn" data-sky="sunset">🌅 غروب</button>
+          <button class="btn" data-sky="night">🌙 ليل</button>
+        </div>
+      </div>
+
+      <div class="dash-section">
+        <div class="dash-title"><span>🚶 انتقال سريع للغرف</span></div>
+        <div style="display:flex;gap:5px;flex-wrap:wrap;">
+          <button class="btn" data-room="living">🛋️ الصالة</button>
+          <button class="btn" data-room="kitchen">🍽️ المطبخ</button>
+          <button class="btn" data-room="bedroom">🛏️ النوم</button>
+          <button class="btn" data-room="office">💻 المكتب</button>
+          <button class="btn" data-room="hall">🚪 المدخل</button>
+        </div>
+      </div>
+
+      <div class="dash-section">
+        <div class="dash-title">
+          <span>📍 إحداثيات الولد</span>
+          <button class="btn" id="saveBoyPosBtn">💾 حفظ الموقع</button>
+        </div>
+        <div id="boyCoordsText" style="font-size:12px;color:#cbd5e1;margin-bottom:7px;">X: 0.60 | Z: 0.40</div>
+        <div style="display:flex;gap:5px;align-items:center;">
+          <input class="mini-input" type="number" step="0.1" id="manualBoyX" placeholder="X" style="width:85px;" />
+          <input class="mini-input" type="number" step="0.1" id="manualBoyZ" placeholder="Z" style="width:85px;" />
+          <button class="btn on" id="applyManualBoyBtn">نقل</button>
+          <button class="btn" id="qbResetPos">↩️ المركز</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- تبويب الرسائل -->
+    <div class="tab-panel" id="tab-messages">
+      <div class="dash-section">
+        <div class="dash-title"><span>✉️ إرسال رسالة للمستخدمين</span></div>
+        <div style="display:flex;gap:5px;margin-bottom:6px;flex-wrap:wrap;">
+          <select class="mini-select" id="msgTargetSelect" style="flex:1;min-width:110px;">
+            <option value="all">كل المستخدمين (عامة)</option>
+            <option value="guest">مستخدم (guest)</option>
+            <option value="visitor">زائر (visitor)</option>
+          </select>
+          <select class="mini-select" id="msgLevelSelect">
+            <option value="info">معلومة</option>
+            <option value="warn">تنبيه</option>
+            <option value="alert">هام</option>
+          </select>
+        </div>
+        <input class="mini-input" type="text" id="msgTitleInput" placeholder="عنوان الرسالة" style="width:100%;margin-bottom:6px;" />
+        <textarea class="mini-textarea" id="msgBodyInput" placeholder="اكتب رسالتك للمستخدمين هنا..."></textarea>
+        <button class="btn on" id="sendAdminMsgBtn" style="width:100%;justify-content:center;">📤 إرسال الرسالة</button>
+      </div>
+
+      <div class="dash-section">
+        <div class="dash-title">
+          <span>📬 الرسائل المرسلة</span>
+          <button class="btn" id="refreshAdminMsgsBtn">↻</button>
+        </div>
+        <div class="msg-list-box" id="adminSentMsgsBox"></div>
+      </div>
+    </div>
+
+    <!-- تبويب السجل -->
+    <div class="tab-panel" id="tab-logs">
+      <div class="dash-section">
+        <div class="dash-title">
+          <span>📜 سجل النشاط والدخول</span>
+          <div style="display:flex;gap:4px;">
+            <button class="btn danger" id="clearLogsBtn">🗑️ مسح</button>
+            <button class="btn" id="refreshLogsBtn">↻</button>
+          </div>
+        </div>
+        <div class="log-box" id="dashLogsList"></div>
+      </div>
+    </div>
+  </aside>
+
+  <div id="bottomDock">
+    <div id="interactHint">🚶 WASD / الأسهم للحريك • Shift للركض • نقرة على جهاز • نقرتان للمشي</div>
+    <div id="quickBar">
+      <button class="btn" id="qbSky" title="تبديل وضع الإضاءة">🌅 غروب</button>
+      <button class="btn" data-dev="living_light" data-label="💡 إنارة الصالة">💡 إنارة الصالة</button>
+      <button class="btn" data-dev="bedroom_light" data-label="🛏️ إنارة النوم">🛏️ إنارة النوم</button>
+      <button class="btn" data-dev="ac_power" data-label="❄️ التكييف">❄️ التكييف</button>
+      <button class="btn" data-dev="tv_power" data-label="📺 التلفاز">📺 التلفاز</button>
+      <button class="btn" data-dev="fan_power" data-label="🌀 المروحة">🌀 المروحة</button>
+      <button class="btn" data-dev="curtains_open" data-label="🪟 الستائر">🪟 الستائر</button>
+      <button class="btn" data-dev="front_door_open" data-label="🚪 الباب">🚪 الباب</button>
+      <button class="btn" data-dev="coffee_maker" data-label="☕ القهوة">☕ القهوة</button>
+      <button class="btn" data-dev="smart_speaker" data-label="🔊 السماعة">🔊 السماعة</button>
+      <button class="btn" data-dev="fireplace_on" data-label="🔥 المدفأة">🔥 المدفأة</button>
+      <button class="btn" data-dev="desk_lamp" data-label="🪔 لمبة المكتب">🪔 لمبة المكتب</button>
+      <button class="btn" data-dev="security_cam" data-label="📷 الكاميرا">📷 الكاميرا</button>
+      <button class="btn" data-dev="robot_vac" data-label="🤖 الروبوت">🤖 الروبوت</button>
+      <button class="btn" data-dev="air_purifier" data-label="🍃 التنقية">🍃 التنقية</button>
+    </div>
+  </div>
+
+  <!-- نافذة صندوق الرسائل -->
+  <div class="overlay" id="inboxModal">
+    <div class="card">
+      <h3>
+        <span>📩 رسائل الإدارة</span>
+        <button class="btn" id="closeInboxModal">✕</button>
+      </h3>
+      <div class="msg-list-box" id="userInboxList" style="max-height:300px;">
+        <div style="color:#94a3b8;">لا توجد رسائل حالياً.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- نافذة تسجيل دخول المستخدم -->
+  <div class="overlay" id="userLoginModal">
+    <div class="card">
+      <h3>
+        <span>🔐 تسجيل دخول المستخدم</span>
+        <button class="btn" id="closeUserLoginModal">✕</button>
+      </h3>
+      <p style="font-size:12.5px;color:#94a3b8;margin-bottom:14px;">سجّل بحساب مستخدم للتحكم أو اختر وضع الزائر:</p>
+      <div class="field">
+        <label>اسم المستخدم</label>
+        <input type="text" id="userLoginName" placeholder="guest أو visitor" autocomplete="username" />
+      </div>
+      <div class="field">
+        <label>كلمة المرور</label>
+        <input type="password" id="userLoginPass" placeholder="••••••••" autocomplete="current-password" />
+      </div>
+      <div class="captcha-box">
+        <span class="captcha-q" id="userCaptchaQ">جاري تحميل التحقق...</span>
+        <button class="btn" type="button" id="refreshUserCaptchaBtn" title="تحديث رمز التحقق">↻</button>
+      </div>
+      <div class="field">
+        <label>اكتب ناتج التحقق</label>
+        <input type="text" id="userCaptchaInput" placeholder="الناتج" inputmode="numeric" autocomplete="off" />
+      </div>
+      <div class="err-msg" id="userLoginErr"></div>
+      <button class="btn on" id="userLoginSubmit" style="width:100%;justify-content:center;padding:10px;margin-bottom:10px;">دخول المستخدم</button>
+      <button class="btn ghost" id="quickVisitorBtn" style="width:100%;justify-content:center;">👀 تعبئة بيانات الزائر</button>
+    </div>
+  </div>
+
+  <!-- نافذة دخول الإدارة -->
+  <div class="overlay" id="adminLoginModal">
+    <div class="card">
+      <h3>
+        <span>🛡️ دخول الإدارة</span>
+        <button class="btn" id="closeAdminLoginModal">✕</button>
+      </h3>
+      <p style="font-size:12.5px;color:#94a3b8;margin-bottom:14px;">بوابة دخول مخصصة لحساب المشرف:</p>
+      <div class="field">
+        <label>اسم حساب المشرف</label>
+        <input type="text" id="adminLoginName" placeholder="اسم المشرف" autocomplete="username" />
+      </div>
+      <div class="field">
+        <label>كلمة المرور</label>
+        <input type="password" id="adminLoginPass" placeholder="••••••••" autocomplete="current-password" />
+      </div>
+      <div class="captcha-box">
+        <span class="captcha-q" id="adminCaptchaQ">جاري تحميل التحقق...</span>
+        <button class="btn" type="button" id="refreshAdminCaptchaBtn" title="تحديث رمز التحقق">↻</button>
+      </div>
+      <div class="field">
+        <label>اكتب ناتج التحقق</label>
+        <input type="text" id="adminCaptchaInput" placeholder="الناتج" inputmode="numeric" autocomplete="off" />
+      </div>
+      <div class="err-msg" id="adminLoginErr"></div>
+      <button class="btn on" id="adminLoginSubmit" style="width:100%;justify-content:center;padding:10px;">تأكيد دخول الإدارة</button>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/three@0.146.0/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.146.0/examples/js/controls/OrbitControls.js"></script>
+
+  <script>
+    function escapeHtml(str) {
+      return String(str ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function escapeAttr(str) {
+      return escapeHtml(str).replace(/`/g, '&#96;');
+    }
+
+    function extractYoutubeId(raw) {
+      if (!raw || typeof raw !== 'string') return null;
+      const clean = raw.trim();
+      if (/^[a-zA-Z0-9_-]{11}$/.test(clean)) return clean;
+      const patterns = [
+        /(?:youtube\.com\/watch\?v=|youtube\.com\/embed\/|youtube\.com\/shorts\/|youtu\.be\/)([a-zA-Z0-9_-]{11})/,
+        /[?&]v=([a-zA-Z0-9_-]{11})/
+      ];
+      for (const re of patterns) {
+        const m = clean.match(re);
+        if (m && m[1]) return m[1];
+      }
+      return null;
+    }
+  </script>
+
+  <script>
+    window.SilinaAPI = window.SilinaAPI || (() => {
+      const TOKEN_KEY = 'silina_auth_token';
+      const USER_KEY = 'silina_auth_user';
+      const DEFAULT_TIMEOUT_MS = 8000;
+
+      function getToken() { try { return localStorage.getItem(TOKEN_KEY); } catch (_) { return null; } }
+      function setToken(token, userMeta = null) {
+        try {
+          localStorage.setItem(TOKEN_KEY, token);
+          if (userMeta) localStorage.setItem(USER_KEY, JSON.stringify(userMeta));
+        } catch (_) {}
+      }
+      function getUser() {
+        try { const raw = localStorage.getItem(USER_KEY); return raw ? JSON.parse(raw) : null; } catch (_) { return null; }
+      }
+      function clearToken() { try { localStorage.removeItem(TOKEN_KEY); localStorage.removeItem(USER_KEY); } catch (_) {} }
+      function isAuthenticated() { return Boolean(getToken()); }
+
+      async function fetchWithTimeout(url, options, timeoutMs) {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), timeoutMs);
+        try {
+          return await fetch(url, Object.assign({}, options, { signal: controller.signal }));
+        } finally {
+          clearTimeout(timer);
+        }
+      }
+
+      async function req(url, options = {}) {
+        if (['about:', 'blob:', 'data:'].includes(window.location.protocol)) {
+          throw new Error('وضع المعاينة المحلي: الخادم غير متصل');
+        }
+        const headers = Object.assign({ 'Content-Type': 'application/json' }, options.headers || {});
+        const token = getToken();
+        if (token) headers.Authorization = `Bearer ${token}`;
+        const res = await fetchWithTimeout(url, Object.assign({}, options, { headers }), options.timeout || DEFAULT_TIMEOUT_MS);
+        if (res.status === 401) {
+          clearToken();
+          window.dispatchEvent(new CustomEvent('silina-auth-required'));
+          throw new Error('انتهت صلاحية الجلسة، يرجى تسجيل الدخول مجدداً');
+        }
+        const contentType = res.headers.get('content-type') || '';
+        const data = contentType.includes('application/json') ? await res.json() : {};
+        if (!res.ok) throw new Error(data.error || `خطأ من الخادم (${res.status})`);
+        return data;
+      }
+
+      return {
+        getToken, setToken, getUser, clearToken, isAuthenticated,
+        getCaptcha: () => req('/api/auth/captcha'),
+        loginUser: async (username, password, captchaId, captchaAnswer) => {
+          const data = await req('/api/auth/login', {
+            method: 'POST',
+            body: JSON.stringify({ username, password, captchaId, captchaAnswer })
+          });
+          if (data && data.token) {
+            setToken(data.token, {
+              username: data.username,
+              role: data.role,
+              capabilities: data.capabilities
+            });
+          }
+          return data;
+        },
+        loginAdmin: async (username, password, captchaId, captchaAnswer) => {
+          const data = await req('/api/auth/admin-login', {
+            method: 'POST',
+            body: JSON.stringify({ username, password, captchaId, captchaAnswer })
+          });
+          if (data && data.token) {
+            setToken(data.token, {
+              username: data.username,
+              role: data.role,
+              capabilities: data.capabilities
+            });
+          }
+          return data;
+        },
+        heartbeat: (activity) =>
+          req('/api/presence/heartbeat', { method: 'POST', body: JSON.stringify({ activity }) }),
+        changePassword: (currentPassword, newPassword) =>
+          req('/api/auth/change-password', { method: 'POST', body: JSON.stringify({ currentPassword, newPassword }) }),
+        revokeSessions: () => req('/api/auth/revoke-sessions', { method: 'POST' }),
+        logout: () => { clearToken(); window.dispatchEvent(new CustomEvent('silina-auth-required')); },
+        getState: () => req('/api/state'),
+        updateState: (patch) => req('/api/state', { method: 'POST', body: JSON.stringify(patch) }),
+        getLogs: () => req('/api/logs'),
+        clearLogs: () => req('/api/logs', { method: 'DELETE' }),
+        listUsers: () => req('/api/admin/users'),
+        updateUserCapabilities: (id, capabilities) =>
+          req(`/api/admin/users/${id}/capabilities`, { method: 'PATCH', body: JSON.stringify(capabilities) }),
+        forceLogoutUser: (id) =>
+          req(`/api/admin/users/${id}/force-logout`, { method: 'POST' }),
+        createUser: (username, password, role) =>
+          req('/api/admin/users', { method: 'POST', body: JSON.stringify({ username, password, role }) }),
+        unlockUser: (id) => req(`/api/admin/users/${id}/unlock`, { method: 'POST' }),
+        updateUserRole: (id, role) =>
+          req(`/api/admin/users/${id}/role`, { method: 'PATCH', body: JSON.stringify({ role }) }),
+        getMessages: () => req('/api/messages'),
+        sendAdminMessage: (payload) =>
+          req('/api/admin/messages', { method: 'POST', body: JSON.stringify(payload) }),
+        deleteAdminMessage: (id) =>
+          req(`/api/admin/messages/${id}`, { method: 'DELETE' }),
+        getCurrentUser: () => req('/api/auth/me'),
+        checkHealth: async () => {
+          if (['about:', 'blob:', 'data:'].includes(window.location.protocol)) return false;
+          try {
+            const res = await fetchWithTimeout('/api/health', {}, 2500);
+            const ct = res.headers.get('content-type') || '';
+            return res.ok && ct.includes('application/json');
+          } catch (_) {
+            return false;
+          }
+        }
+      };
+    })();
+  </script>
+
+  <script>
+    const SilinaAPI = window.SilinaAPI;
+
+    const ALL_DEVICES = [
+      { key: 'living_light', label: '💡 إنارة الصالة' },
+      { key: 'bedroom_light', label: '🛏️ إنارة النوم' },
+      { key: 'ac_power', label: '❄️ التكييف' },
+      { key: 'tv_power', label: '📺 التلفاز' },
+      { key: 'fan_power', label: '🌀 المروحة' },
+      { key: 'curtains_open', label: '🪟 الستائر' },
+      { key: 'front_door_open', label: '🚪 الباب' },
+      { key: 'coffee_maker', label: '☕ القهوة' },
+      { key: 'smart_speaker', label: '🔊 السماعة' },
+      { key: 'fireplace_on', label: '🔥 المدفأة' },
+      { key: 'desk_lamp', label: '🪔 لمبة المكتب' },
+      { key: 'security_cam', label: '📷 الكاميرا' },
+      { key: 'robot_vac', label: '🤖 الروبوت' },
+      { key: 'air_purifier', label: '🍃 التنقية' }
+    ];
+
+    const ROOM_PRESETS = {
+      living: { x: -2.6, z: 1.5, yaw: 0.4, label: '🛋️ الصالة' },
+      kitchen: { x: 3.4, z: 2.2, yaw: -1.2, label: '🍽️ المطبخ' },
+      bedroom: { x: -4.8, z: -3.2, yaw: 0, label: '🛏️ غرفة النوم' },
+      office: { x: 4.0, z: -3.4, yaw: -2.4, label: '💻 المكتب' },
+      hall: { x: 0.0, z: 4.4, yaw: 3.14, label: '🚪 المدخل' }
+    };
+
+    const CAP_LABELS = {
+      can_move: 'حركة',
+      can_control_devices: 'أجهزة',
+      can_watch_tv: 'يوتيوب',
+      can_sleep: 'نوم',
+      can_use_robot: 'روبوت'
+    };
+
+    let toastTimer = null;
+    function showToast(msg) {
+      const el = document.getElementById('toast');
+      if (!el) return;
+      el.textContent = String(msg ?? '');
+      el.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => el.classList.remove('show'), 3400);
+    }
+
+    const T = window.THREE;
+    const canvas = document.getElementById('c');
+    const scene = new T.Scene();
+
+    const SKY_CONFIGS = {
+      day: { bg: 0x1e3a5f, fog: 0x1e3a5f, sunColor: 0xfff7ed, sunIntensity: 0.9, hemiIntensity: 0.65, label: '☀️ نهار' },
+      sunset: { bg: 0x1b1528, fog: 0x1b1528, sunColor: 0xffb07c, sunIntensity: 0.75, hemiIntensity: 0.55, label: '🌅 غروب' },
+      night: { bg: 0x090d16, fog: 0x090d16, sunColor: 0x60a5fa, sunIntensity: 0.35, hemiIntensity: 0.38, label: '🌙 ليل' }
+    };
+
+    scene.background = new T.Color(SKY_CONFIGS.sunset.bg);
+    scene.fog = new T.FogExp2(SKY_CONFIGS.sunset.fog, 0.018);
+
+    const DEFAULT_CAM_POS = new T.Vector3(7.6, 5.8, 8.2);
+    const DEFAULT_CAM_TARGET = new T.Vector3(0, 0.9, 0);
+
+    let followBoy = true;
+    let isServerOnline = false;
+    let autoRoamActive = false;
+    let tvSleepTimerId = null;
+
+    const camera = new T.PerspectiveCamera(52, window.innerWidth / window.innerHeight, 0.1, 160);
+    camera.position.copy(DEFAULT_CAM_POS);
+
+    const renderer = new T.WebGLRenderer({ canvas, antialias: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = T.PCFSoftShadowMap;
+    renderer.outputEncoding = T.sRGBEncoding;
+    renderer.toneMapping = T.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 0.88;
+
+    const controls = new T.OrbitControls(camera, renderer.domElement);
+    controls.target.copy(DEFAULT_CAM_TARGET);
+    controls.enableDamping = true;
+    controls.maxPolarAngle = Math.PI * 0.49;
+    controls.minDistance = 1.2;
+    controls.maxDistance = 22;
+    controls.update();
+
+    const followBoyBtn = document.getElementById('followBoyBtn');
+    followBoyBtn.onclick = () => {
+      followBoy = !followBoy;
+      followBoyBtn.classList.toggle('on', followBoy);
+      showToast(followBoy ? '🚶 الكاميرا تتبع الولد الآن' : '🎥 وضع الكاميرا الحر');
+    };
+
+    document.getElementById('camResetBtn').onclick = () => {
+      if (followBoy) {
+        camera.position.set(
+          characterGroup.position.x + 2.8,
+          characterGroup.position.y + 2.2,
+          characterGroup.position.z + 3.0
+        );
+        controls.target.set(characterGroup.position.x, characterGroup.position.y + 0.9, characterGroup.position.z);
+      } else {
+        camera.position.copy(DEFAULT_CAM_POS);
+        controls.target.copy(DEFAULT_CAM_TARGET);
+      }
+      controls.update();
+      showToast('🎥 تم إعادة ضبط الكاميرا');
+    };
+
+    const hemiLight = new T.HemisphereLight(0xffeedd, 0x1e293b, 0.55);
+    scene.add(hemiLight);
+
+    const sunLight = new T.DirectionalLight(0xffb07c, 0.75);
+    sunLight.position.set(8, 12, 6);
+    sunLight.castShadow = true;
+    sunLight.shadow.mapSize.set(1024, 1024);
+    scene.add(sunLight);
+
+    const floorBounds = { minX: -7.0, maxX: 7.0, minZ: -5.8, maxZ: 5.8 };
+
+    const houseGroup = new T.Group();
+    scene.add(houseGroup);
+
+    const interactiveMeshes = [];
+    const deviceVisuals = {};
+
+    function registerInteractive(obj, devKey, title) {
+      obj.traverse((child) => {
+        if (child.isMesh) {
+          child.userData.devKey = devKey;
+          child.userData.devTitle = title;
+          interactiveMeshes.push(child);
+        }
+      });
+    }
+
+    function addPart(parent, geo, mat, x, y, z, rx = 0, ry = 0, rz = 0, castShadow = true, receiveShadow = false) {
+      const m = new T.Mesh(geo, mat);
+      m.position.set(x, y, z);
+      if (rx || ry || rz) m.rotation.set(rx, ry, rz);
+      m.castShadow = castShadow;
+      m.receiveShadow = receiveShadow;
+      parent.add(m);
+      return m;
+    }
+
+    function buildExpandedApartment() {
+      const floorMat = new T.MeshStandardMaterial({ color: 0x292524, roughness: 0.75 });
+      const tileMat = new T.MeshStandardMaterial({ color: 0x334155, roughness: 0.55 });
+      const wallMat = new T.MeshStandardMaterial({ color: 0x334155, roughness: 0.85, transparent: true, opacity: 0.52 });
+      const woodMat = new T.MeshStandardMaterial({ color: 0x78350f, roughness: 0.65 });
+      const darkWoodMat = new T.MeshStandardMaterial({ color: 0x451a03, roughness: 0.7 });
+      const lightWoodMat = new T.MeshStandardMaterial({ color: 0xb45309, roughness: 0.6 });
+      const sofaMat = new T.MeshStandardMaterial({ color: 0x1d4ed8, roughness: 0.75 });
+      const pillowMat = new T.MeshStandardMaterial({ color: 0x38bdf8, roughness: 0.7 });
+      const bedMat = new T.MeshStandardMaterial({ color: 0x475569, roughness: 0.7 });
+      const blanketMat = new T.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.7 });
+      const rugMat = new T.MeshStandardMaterial({ color: 0x991b1b, roughness: 0.9 });
+      const metalMat = new T.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.65, roughness: 0.3 });
+      const darkMetalMat = new T.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.5, roughness: 0.45 });
+      const plantMat = new T.MeshStandardMaterial({ color: 0x16a34a, roughness: 0.75 });
+      const artMat = new T.MeshStandardMaterial({ color: 0xeab308, roughness: 0.6 });
+      const screenDarkMat = new T.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.3 });
+
+      const staticProps = new T.Group();
+      houseGroup.add(staticProps);
+
+      addPart(staticProps, new T.BoxGeometry(14.8, 0.14, 12.4), floorMat, 0, -0.07, 0, 0, 0, 0, false, true);
+      addPart(staticProps, new T.BoxGeometry(5.6, 0.025, 5.2), tileMat, 4.2, 0.012, 2.8, 0, 0, 0, false, true);
+      const grid = new T.GridHelper(14, 28, 0x475569, 0x1e293b);
+      grid.position.y = 0.005;
+      staticProps.add(grid);
+
+      addPart(staticProps, new T.BoxGeometry(14.8, 2.7, 0.16), wallMat, 0, 1.35, -6.12);
+      addPart(staticProps, new T.BoxGeometry(0.16, 2.7, 12.4), wallMat, -7.32, 1.35, 0);
+      addPart(staticProps, new T.BoxGeometry(0.16, 2.7, 12.4), wallMat, 7.32, 1.35, 0);
+      addPart(staticProps, new T.BoxGeometry(0.14, 2.2, 3.6), wallMat, -1.2, 1.1, -4.2);
+      addPart(staticProps, new T.BoxGeometry(0.14, 2.2, 3.4), wallMat, 1.8, 1.1, -4.3);
+
+      // 50 عنصراً موزعة على الغرف
+      addPart(staticProps, new T.BoxGeometry(3.8, 0.02, 2.7), rugMat, -3.6, 0.015, 1.6, 0, 0, 0, false, true);
+      addPart(staticProps, new T.BoxGeometry(2.6, 0.36, 0.9), sofaMat, -3.6, 0.22, 2.75);
+      addPart(staticProps, new T.BoxGeometry(2.6, 0.55, 0.22), sofaMat, -3.6, 0.55, 3.1);
+      addPart(staticProps, new T.BoxGeometry(0.9, 0.36, 1.9), sofaMat, -5.2, 0.22, 2.15);
+      addPart(staticProps, new T.BoxGeometry(0.42, 0.28, 0.36), pillowMat, -4.3, 0.52, 2.85, 0, 0.2, 0);
+      addPart(staticProps, new T.BoxGeometry(0.42, 0.28, 0.36), pillowMat, -2.8, 0.52, 2.85, 0, -0.2, 0);
+      addPart(staticProps, new T.BoxGeometry(1.3, 0.38, 0.72), woodMat, -3.6, 0.19, 1.45);
+      addPart(staticProps, new T.BoxGeometry(2.2, 0.55, 0.42), darkWoodMat, -3.6, 0.28, -0.35);
+      addPart(staticProps, new T.BoxGeometry(1.6, 0.12, 0.32), lightWoodMat, -6.9, 1.45, 0.8);
+      addPart(staticProps, new T.BoxGeometry(0.55, 0.45, 0.55), woodMat, -1.75, 0.23, 2.55);
+      addPart(staticProps, new T.BoxGeometry(1.3, 0.82, 0.06), artMat, -3.6, 1.65, -5.98);
+      addPart(staticProps, new T.CylinderGeometry(0.32, 0.32, 0.08, 24), metalMat, -1.6, 1.95, -5.98, Math.PI / 2, 0, 0);
+
+      addPart(staticProps, new T.BoxGeometry(1.85, 0.76, 1.1), woodMat, 4.2, 0.38, 2.4);
+      addPart(staticProps, new T.BoxGeometry(0.46, 0.46, 0.46), woodMat, 4.2, 0.23, 1.72);
+      addPart(staticProps, new T.BoxGeometry(0.46, 0.46, 0.46), woodMat, 4.2, 0.23, 3.08);
+      addPart(staticProps, new T.BoxGeometry(0.46, 0.46, 0.46), woodMat, 3.45, 0.23, 2.4);
+      addPart(staticProps, new T.BoxGeometry(0.46, 0.46, 0.46), woodMat, 4.95, 0.23, 2.4);
+      addPart(staticProps, new T.BoxGeometry(3.2, 0.88, 0.65), lightWoodMat, 5.4, 0.44, 5.55);
+      addPart(staticProps, new T.BoxGeometry(3.2, 0.65, 0.4), darkWoodMat, 5.4, 1.85, 5.68);
+      addPart(staticProps, new T.BoxGeometry(0.75, 1.95, 0.78), metalMat, 6.65, 0.98, 4.75);
+      addPart(staticProps, new T.BoxGeometry(0.68, 0.85, 0.64), darkMetalMat, 4.6, 0.43, 5.52);
+      addPart(staticProps, new T.BoxGeometry(0.55, 0.34, 0.38), metalMat, 3.7, 1.05, 5.52);
+      addPart(staticProps, new T.BoxGeometry(0.72, 0.08, 0.52), metalMat, 5.8, 0.89, 5.52);
+      addPart(staticProps, new T.CylinderGeometry(0.24, 0.16, 0.14, 16), artMat, 4.2, 0.83, 2.4);
+
+      addPart(staticProps, new T.BoxGeometry(2.25, 0.28, 2.4), darkWoodMat, -4.8, 0.14, -4.4);
+      addPart(staticProps, new T.BoxGeometry(2.05, 0.22, 2.2), bedMat, -4.8, 0.36, -4.4);
+      addPart(staticProps, new T.BoxGeometry(2.08, 0.24, 1.4), blanketMat, -4.8, 0.37, -3.95);
+      addPart(staticProps, new T.BoxGeometry(0.52, 0.46, 0.46), woodMat, -6.25, 0.23, -4.8);
+      addPart(staticProps, new T.BoxGeometry(0.52, 0.46, 0.46), woodMat, -3.35, 0.23, -4.8);
+      addPart(staticProps, new T.BoxGeometry(1.9, 2.05, 0.62), woodMat, -2.15, 1.03, -5.65);
+      addPart(staticProps, new T.BoxGeometry(0.85, 1.55, 0.08), screenDarkMat, -6.95, 1.15, -2.5, 0, Math.PI / 2, 0);
+      addPart(staticProps, new T.BoxGeometry(2.2, 0.02, 1.4), rugMat, -4.8, 0.015, -2.55, 0, 0, 0, false, true);
+      addPart(staticProps, new T.BoxGeometry(0.22, 0.04, 0.22), darkMetalMat, -6.25, 0.48, -4.8);
+      addPart(staticProps, new T.CylinderGeometry(0.28, 0.22, 0.42, 16), darkWoodMat, -6.65, 0.21, -1.2);
+
+      addPart(staticProps, new T.BoxGeometry(1.65, 0.76, 0.82), woodMat, 4.6, 0.38, -5.35);
+      addPart(staticProps, new T.BoxGeometry(0.58, 0.85, 0.58), darkMetalMat, 4.6, 0.43, -4.55);
+      addPart(staticProps, new T.BoxGeometry(0.82, 0.48, 0.06), screenDarkMat, 4.5, 1.04, -5.52);
+      addPart(staticProps, new T.BoxGeometry(0.24, 0.42, 0.46), darkMetalMat, 5.2, 0.98, -5.38);
+      addPart(staticProps, new T.BoxGeometry(0.46, 0.025, 0.16), darkMetalMat, 4.45, 0.775, -5.12);
+      addPart(staticProps, new T.BoxGeometry(0.45, 1.75, 1.45), darkWoodMat, 6.85, 0.88, -3.2);
+      addPart(staticProps, new T.BoxGeometry(1.2, 0.1, 0.28), lightWoodMat, 4.6, 1.75, -5.92);
+      addPart(staticProps, new T.CylinderGeometry(0.24, 0.2, 0.32, 16), darkMetalMat, 3.55, 0.16, -5.35);
+
+      addPart(staticProps, new T.BoxGeometry(1.4, 0.55, 0.45), woodMat, 1.4, 0.28, 5.68);
+      addPart(staticProps, new T.BoxGeometry(0.95, 1.5, 0.12), darkMetalMat, 2.75, 0.75, 5.88);
+      addPart(staticProps, new T.BoxGeometry(0.9, 0.85, 0.55), tileMat, -0.5, 0.43, 5.55);
+      addPart(staticProps, new T.BoxGeometry(0.9, 0.75, 0.08), screenDarkMat, -0.5, 1.35, 5.95);
+      addPart(staticProps, new T.CylinderGeometry(0.25, 0.19, 0.38, 16), darkWoodMat, -1.65, 0.19, 5.45);
+      addPart(staticProps, new T.DodecahedronGeometry(0.42, 0), plantMat, -1.65, 0.64, 5.45);
+      addPart(staticProps, new T.CylinderGeometry(0.26, 0.2, 0.4, 16), darkWoodMat, 6.5, 0.2, 0.4);
+      addPart(staticProps, new T.DodecahedronGeometry(0.45, 0), plantMat, 6.5, 0.68, 0.4);
+
+      // الأجهزة الـ 14
+      const livingBulbMat = new T.MeshStandardMaterial({ color: 0xfef08a, emissive: 0xfacc15, emissiveIntensity: 1.1 });
+      const livingLightMesh = addPart(new T.Group(), new T.SphereGeometry(0.22, 16, 16), livingBulbMat, -3.6, 2.35, 1.6);
+      const livingPointLight = new T.PointLight(0xfef08a, 1.1, 8);
+      livingPointLight.position.set(-3.6, 2.15, 1.6);
+      const livingRoot = new T.Group();
+      livingRoot.add(livingLightMesh, livingPointLight);
+      houseGroup.add(livingRoot);
+      registerInteractive(livingLightMesh, 'living_light', '💡 إنارة الصالة');
+      deviceVisuals.living_light = { root: livingRoot, mesh: livingLightMesh, light: livingPointLight };
+
+      const bedBulbMat = new T.MeshStandardMaterial({ color: 0xfde68a, emissive: 0xf59e0b, emissiveIntensity: 0 });
+      const bedLightMesh = addPart(new T.Group(), new T.SphereGeometry(0.2, 16, 16), bedBulbMat, -4.8, 2.35, -4.4);
+      const bedPointLight = new T.PointLight(0xfde68a, 0, 7);
+      bedPointLight.position.set(-4.8, 2.15, -4.4);
+      const bedRoot = new T.Group();
+      bedRoot.add(bedLightMesh, bedPointLight);
+      houseGroup.add(bedRoot);
+      registerInteractive(bedLightMesh, 'bedroom_light', '🛏️ إنارة النوم');
+      deviceVisuals.bedroom_light = { root: bedRoot, mesh: bedLightMesh, light: bedPointLight };
+
+      const acBody = addPart(new T.Group(), new T.BoxGeometry(1.2, 0.34, 0.28), new T.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.4 }), -3.6, 2.05, -5.92);
+      const acLed = addPart(acBody, new T.BoxGeometry(0.18, 0.04, 0.02), new T.MeshBasicMaterial({ color: 0x22c55e }), 0.36, -0.05, 0.145);
+      houseGroup.add(acBody);
+      registerInteractive(acBody, 'ac_power', '❄️ التكييف');
+      deviceVisuals.ac_power = { root: acBody, mesh: acBody, led: acLed };
+
+      const tvScreenMat = new T.MeshStandardMaterial({ color: 0x0f172a, emissive: 0x38bdf8, emissiveIntensity: 0 });
+      const tvGroup = new T.Group();
+      tvGroup.position.set(-3.6, 1.05, -0.35);
+      addPart(tvGroup, new T.BoxGeometry(1.65, 0.92, 0.08), darkMetalMat, 0, 0, 0);
+      addPart(tvGroup, new T.PlaneGeometry(1.5, 0.8), tvScreenMat, 0, 0, 0.045);
+      houseGroup.add(tvGroup);
+      registerInteractive(tvGroup, 'tv_power', '📺 التلفاز');
+      deviceVisuals.tv_power = { root: tvGroup, screenMat: tvScreenMat };
+
+      const fanGroup = new T.Group();
+      fanGroup.position.set(4.2, 2.25, 2.4);
+      addPart(fanGroup, new T.CylinderGeometry(0.14, 0.14, 0.12, 16), metalMat, 0, 0, 0);
+      const bladesGroup = new T.Group();
+      for (let i = 0; i < 4; i++) {
+        const blade = new T.Mesh(new T.BoxGeometry(0.85, 0.02, 0.16), woodMat);
+        blade.rotation.y = (i * Math.PI) / 2;
+        blade.position.set(Math.cos((i * Math.PI) / 2) * 0.35, 0, Math.sin((i * Math.PI) / 2) * 0.35);
+        bladesGroup.add(blade);
+      }
+      fanGroup.add(bladesGroup);
+      houseGroup.add(fanGroup);
+      registerInteractive(fanGroup, 'fan_power', '🌀 المروحة');
+      deviceVisuals.fan_power = { root: fanGroup, blades: bladesGroup };
+
+      const curtainMat = new T.MeshStandardMaterial({ color: 0x6366f1, roughness: 0.8 });
+      const leftCurtain = addPart(new T.Group(), new T.BoxGeometry(0.45, 1.8, 0.06), curtainMat, 2.4, 1.15, -5.95);
+      const rightCurtain = addPart(new T.Group(), new T.BoxGeometry(0.45, 1.8, 0.06), curtainMat, 4.4, 1.15, -5.95);
+      const curtainsContainer = new T.Group();
+      curtainsContainer.add(leftCurtain, rightCurtain);
+      houseGroup.add(curtainsContainer);
+      registerInteractive(curtainsContainer, 'curtains_open', '🪟 الستائر');
+      deviceVisuals.curtains_open = { root: curtainsContainer, left: leftCurtain, right: rightCurtain };
+
+      const doorPivot = new T.Group();
+      doorPivot.position.set(-0.2, 0, 6.02);
+      addPart(doorPivot, new T.BoxGeometry(1.18, 2.1, 0.08), woodMat, 0.59, 1.05, 0);
+      houseGroup.add(doorPivot);
+      registerInteractive(doorPivot, 'front_door_open', '🚪 الباب الرئيسي');
+      deviceVisuals.front_door_open = { root: doorPivot, pivot: doorPivot };
+
+      const coffeeGroup = new T.Group();
+      coffeeGroup.position.set(6.4, 0.88, 5.55);
+      addPart(coffeeGroup, new T.BoxGeometry(0.28, 0.34, 0.28), metalMat, 0, 0.17, 0);
+      const coffeeGlow = addPart(coffeeGroup, new T.SphereGeometry(0.04, 10, 10), new T.MeshBasicMaterial({ color: 0xef4444 }), 0, 0.26, 0.15);
+      houseGroup.add(coffeeGroup);
+      registerInteractive(coffeeGroup, 'coffee_maker', '☕ ماكينة القهوة');
+      deviceVisuals.coffee_maker = { root: coffeeGroup, glow: coffeeGlow };
+
+      const speakerGroup = new T.Group();
+      speakerGroup.position.set(-3.1, 0.38, 1.45);
+      addPart(speakerGroup, new T.CylinderGeometry(0.13, 0.14, 0.3, 20), darkMetalMat, 0, 0.15, 0);
+      const speakerRing = addPart(speakerGroup, new T.TorusGeometry(0.132, 0.015, 10, 24), new T.MeshBasicMaterial({ color: 0x38bdf8 }), 0, 0.28, 0, Math.PI / 2, 0, 0);
+      houseGroup.add(speakerGroup);
+      registerInteractive(speakerGroup, 'smart_speaker', '🔊 السماعة الذكية');
+      deviceVisuals.smart_speaker = { root: speakerGroup, ring: speakerRing };
+
+      const fireGroup = new T.Group();
+      fireGroup.position.set(-7.05, 0, -0.5);
+      addPart(fireGroup, new T.BoxGeometry(0.45, 0.95, 1.1), new T.MeshStandardMaterial({ color: 0x3f3f46 }), 0, 0.48, 0);
+      const flameMat = new T.MeshStandardMaterial({ color: 0xf97316, emissive: 0xea580c, emissiveIntensity: 0 });
+      addPart(fireGroup, new T.BoxGeometry(0.12, 0.42, 0.65), flameMat, 0.2, 0.35, 0);
+      houseGroup.add(fireGroup);
+      registerInteractive(fireGroup, 'fireplace_on', '🔥 المدفأة');
+      deviceVisuals.fireplace_on = { root: fireGroup, flameMat };
+
+      const lampGroup = new T.Group();
+      lampGroup.position.set(5.1, 0.76, -5.45);
+      addPart(lampGroup, new T.CylinderGeometry(0.04, 0.08, 0.36, 12), metalMat, 0, 0.18, 0);
+      const lampShadeMat = new T.MeshStandardMaterial({ color: 0xfde047, emissive: 0xfacc15, emissiveIntensity: 0.7 });
+      addPart(lampGroup, new T.ConeGeometry(0.2, 0.22, 16), lampShadeMat, 0, 0.42, 0);
+      houseGroup.add(lampGroup);
+      registerInteractive(lampGroup, 'desk_lamp', '🪔 لمبة المكتب');
+      deviceVisuals.desk_lamp = { root: lampGroup, shadeMat: lampShadeMat };
+
+      const camGroup = new T.Group();
+      camGroup.position.set(6.95, 2.2, 5.65);
+      addPart(camGroup, new T.BoxGeometry(0.24, 0.2, 0.32), new T.MeshStandardMaterial({ color: 0xf8fafc }), 0, 0, 0);
+      const camLens = addPart(camGroup, new T.CylinderGeometry(0.06, 0.06, 0.08, 12), new T.MeshBasicMaterial({ color: 0x22c55e }), 0, 0, -0.18, Math.PI / 2, 0, 0);
+      houseGroup.add(camGroup);
+      registerInteractive(camGroup, 'security_cam', '📷 كاميرا الأمان');
+      deviceVisuals.security_cam = { root: camGroup, lens: camLens };
+
+      const robotGroup = new T.Group();
+      robotGroup.position.set(0.8, 0.08, 2.2);
+      addPart(robotGroup, new T.CylinderGeometry(0.28, 0.3, 0.11, 24), screenDarkMat, 0, 0, 0);
+      const robotTop = addPart(robotGroup, new T.CylinderGeometry(0.2, 0.22, 0.03, 20), new T.MeshBasicMaterial({ color: 0x3b82f6 }), 0, 0.06, 0);
+      houseGroup.add(robotGroup);
+      registerInteractive(robotGroup, 'robot_vac', '🤖 الروبوت المنزلي');
+      deviceVisuals.robot_vac = { root: robotGroup, group: robotGroup, top: robotTop };
+
+      const purifierGroup = new T.Group();
+      purifierGroup.position.set(6.5, 0, -1.5);
+      addPart(purifierGroup, new T.CylinderGeometry(0.22, 0.24, 0.68, 20), new T.MeshStandardMaterial({ color: 0xe2e8f0 }), 0, 0.34, 0);
+      const purifierLight = addPart(purifierGroup, new T.SphereGeometry(0.05, 10, 10), new T.MeshBasicMaterial({ color: 0x10b981 }), 0, 0.62, 0.2);
+      houseGroup.add(purifierGroup);
+      registerInteractive(purifierGroup, 'air_purifier', '🍃 جهاز التنقية');
+      deviceVisuals.air_purifier = { root: purifierGroup, indicator: purifierLight };
+    }
+
+    buildExpandedApartment();
+
+    const groundShadowPlane = new T.Mesh(
+      new T.PlaneGeometry(15, 13),
+      new T.ShadowMaterial({ opacity: 0.22 })
+    );
+    groundShadowPlane.rotation.x = -Math.PI / 2;
+    groundShadowPlane.position.y = 0.01;
+    groundShadowPlane.receiveShadow = true;
+    scene.add(groundShadowPlane);
+
+    const walkMarker = new T.Mesh(
+      new T.RingGeometry(0.14, 0.22, 28),
+      new T.MeshBasicMaterial({ color: 0x38bdf8, side: T.DoubleSide, transparent: true, opacity: 0.85 })
+    );
+    walkMarker.rotation.x = -Math.PI / 2;
+    walkMarker.position.y = 0.03;
+    walkMarker.visible = false;
+    scene.add(walkMarker);
+
+    const state = {
+      sky_mode: 'sunset',
+      boy_x: 0.6,
+      boy_z: 0.4,
+      boy_yaw: 0,
+      is_sleeping: 0,
+      tv_video_id: 'dQw4w9WgXcQ',
+      living_light: 1,
+      bedroom_light: 0,
+      ac_power: 1,
+      tv_power: 0,
+      fan_power: 0,
+      curtains_open: 1,
+      front_door_open: 0,
+      coffee_maker: 0,
+      smart_speaker: 1,
+      fireplace_on: 0,
+      desk_lamp: 1,
+      security_cam: 1,
+      robot_vac: 0,
+      air_purifier: 1,
+      hidden_devices: []
+    };
+
+    const characterGroup = new T.Group();
+    characterGroup.position.set(0.6, 0.02, 0.4);
+    scene.add(characterGroup);
+
+    const boyVisualGroup = new T.Group();
+    characterGroup.add(boyVisualGroup);
+
+    let boyRig = {
+      torso: null,
+      head: null,
+      leftArm: null,
+      rightArm: null,
+      leftLeg: null,
+      rightLeg: null
+    };
+
+    function buildArticulatedBoy() {
+      boyVisualGroup.clear();
+
+      const skinMat = new T.MeshStandardMaterial({ color: 0xfde68a, roughness: 0.55 });
+      const shirtMat = new T.MeshStandardMaterial({ color: 0x2563eb, roughness: 0.6 });
+      const pantsMat = new T.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.7 });
+      const shoeMat = new T.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.6 });
+      const visorMat = new T.MeshStandardMaterial({ color: 0x38bdf8, roughness: 0.45 });
+
+      const torso = addPart(boyVisualGroup, new T.CylinderGeometry(0.17, 0.19, 0.54, 20), shirtMat, 0, 0.82, 0);
+
+      const headGroup = new T.Group();
+      headGroup.position.set(0, 1.14, 0);
+      addPart(headGroup, new T.SphereGeometry(0.16, 20, 20), skinMat, 0, 0.14, 0);
+      addPart(headGroup, new T.BoxGeometry(0.16, 0.045, 0.08), visorMat, 0, 0.16, 0.13);
+      boyVisualGroup.add(headGroup);
+
+      const makeArm = (xOffset) => {
+        const pivot = new T.Group();
+        pivot.position.set(xOffset, 1.04, 0);
+        addPart(pivot, new T.CapsuleGeometry(0.05, 0.34, 6, 12), skinMat, 0, -0.21, 0);
+        boyVisualGroup.add(pivot);
+        return pivot;
+      };
+
+      const leftArm = makeArm(0.24);
+      const rightArm = makeArm(-0.24);
+
+      const makeLeg = (xOffset) => {
+        const pivot = new T.Group();
+        pivot.position.set(xOffset, 0.54, 0);
+        addPart(pivot, new T.CapsuleGeometry(0.065, 0.36, 6, 12), pantsMat, 0, -0.22, 0);
+        addPart(pivot, new T.BoxGeometry(0.13, 0.08, 0.22), shoeMat, 0, -0.44, 0.04);
+        boyVisualGroup.add(pivot);
+        return pivot;
+      };
+
+      const leftLeg = makeLeg(0.095);
+      const rightLeg = makeLeg(-0.095);
+
+      boyRig = { torso, head: headGroup, leftArm, rightArm, leftLeg, rightLeg };
+    }
+
+    buildArticulatedBoy();
+
+    const userLoginModal = document.getElementById('userLoginModal');
+    const adminLoginModal = document.getElementById('adminLoginModal');
+    const inboxModal = document.getElementById('inboxModal');
+    const dashDrawer = document.getElementById('dashboardDrawer');
+    const tvPanel = document.getElementById('tvPlayerPanel');
+    const robotPanel = document.getElementById('robotPanel');
+
+    let userCaptchaId = '';
+    let adminCaptchaId = '';
+    let latestMessages = [];
+    let lastSeenMessageId = 0;
+    let currentVideoRenderedId = '';
+
+    async function loadCaptchaFor(target) {
+      const qEl = document.getElementById(target === 'admin' ? 'adminCaptchaQ' : 'userCaptchaQ');
+      const inpEl = document.getElementById(target === 'admin' ? 'adminCaptchaInput' : 'userCaptchaInput');
+      if (inpEl) inpEl.value = '';
+      if (!isServerOnline) {
+        if (qEl) qEl.textContent = 'وضع معاينة محلية';
+        return;
+      }
+      try {
+        if (qEl) qEl.textContent = 'جاري التحميل...';
+        const data = await SilinaAPI.getCaptcha();
+        if (target === 'admin') adminCaptchaId = data.captchaId || '';
+        else userCaptchaId = data.captchaId || '';
+        if (qEl) qEl.textContent = data.question || '';
+      } catch (_) {
+        if (qEl) qEl.textContent = 'تعذر تحميل رمز التحقق، اضغط ↻';
+      }
+    }
+
+    document.getElementById('refreshUserCaptchaBtn').onclick = () => loadCaptchaFor('user');
+    document.getElementById('refreshAdminCaptchaBtn').onclick = () => loadCaptchaFor('admin');
+
+    function isAdminLoginRoute() {
+      const p = (window.location.pathname || '').toLowerCase();
+      const h = (window.location.hash || '').toLowerCase();
+      return p === '/admin-login' || p === '/admin' || h === '#admin' || h === '#admin-login';
+    }
+
+    function getCurrentRole() {
+      const u = SilinaAPI.getUser();
+      return (u && u.role) || 'visitor';
+    }
+
+    function getCapabilities() {
+      const role = getCurrentRole();
+      if (role === 'admin') {
+        return { can_move: true, can_control_devices: true, can_watch_tv: true, can_sleep: true, can_use_robot: true };
+      }
+      const u = SilinaAPI.getUser();
+      const caps = (u && u.capabilities) || {};
+      if (role === 'guest') {
+        return {
+          can_move: caps.can_move !== undefined ? Boolean(caps.can_move) : true,
+          can_control_devices: caps.can_control_devices !== undefined ? Boolean(caps.can_control_devices) : true,
+          can_watch_tv: caps.can_watch_tv !== undefined ? Boolean(caps.can_watch_tv) : true,
+          can_sleep: caps.can_sleep !== undefined ? Boolean(caps.can_sleep) : true,
+          can_use_robot: caps.can_use_robot !== undefined ? Boolean(caps.can_use_robot) : true
+        };
+      }
+      return {
+        can_move: Boolean(caps.can_move),
+        can_control_devices: Boolean(caps.can_control_devices),
+        can_watch_tv: Boolean(caps.can_watch_tv),
+        can_sleep: Boolean(caps.can_sleep),
+        can_use_robot: Boolean(caps.can_use_robot)
+      };
+    }
+
+    function applyRolePermissions() {
+      const role = getCurrentRole();
+      const u = SilinaAPI.getUser();
+      const caps = getCapabilities();
+      const isAdmin = role === 'admin';
+
+      const userLabel = document.getElementById('userLabel');
+      const roleBadge = document.getElementById('roleBadge');
+      const dashBtn = document.getElementById('dashToggleBtn');
+
+      if (isAdmin) {
+        userLabel.textContent = `👤 ${u && u.username ? u.username : 'مستخدم'}`;
+        roleBadge.textContent = 'إدارة';
+        dashBtn.style.display = 'inline-flex';
+      } else if (role === 'guest') {
+        userLabel.textContent = `👤 ${u && u.username ? u.username : 'مستخدم'}`;
+        roleBadge.textContent = 'مستخدم';
+        dashBtn.style.display = 'none';
+        dashDrawer.classList.remove('open');
+      } else {
+        userLabel.textContent = '👤 زائر';
+        roleBadge.textContent = 'زائر';
+        dashBtn.style.display = 'none';
+        dashDrawer.classList.remove('open');
+      }
+
+      document.querySelectorAll('[data-dev]').forEach((btn) => {
+        const key = btn.getAttribute('data-dev');
+        btn.disabled = key === 'tv_power' ? (!caps.can_watch_tv && !caps.can_control_devices) : !caps.can_control_devices;
+      });
+
+      document.getElementById('qbSky').disabled = !caps.can_control_devices;
+      document.querySelectorAll('[data-sky]').forEach((b) => { b.disabled = !caps.can_control_devices; });
+      document.getElementById('allLightsOnBtn').disabled = !caps.can_control_devices;
+      document.getElementById('allOffBtn').disabled = !caps.can_control_devices;
+      document.getElementById('awayModeBtn').disabled = !caps.can_control_devices;
+
+      document.querySelectorAll('[data-room]').forEach((b) => { b.disabled = !caps.can_move; });
+      document.getElementById('applyManualBoyBtn').disabled = !caps.can_move;
+      document.getElementById('qbResetPos').disabled = !caps.can_move;
+      document.getElementById('saveBoyPosBtn').disabled = !caps.can_move;
+
+      document.getElementById('sleepToggleBtn').disabled = !caps.can_sleep;
+      document.getElementById('openRobotPanelBtn').disabled = !caps.can_use_robot;
+      document.getElementById('sendRobotCommandBtn').disabled = !caps.can_use_robot;
+      document.querySelectorAll('[data-robot-cmd]').forEach((b) => { b.disabled = !caps.can_use_robot; });
+
+      document.getElementById('applyYtVideoBtn').disabled = !caps.can_watch_tv;
+      document.querySelectorAll('[data-yt-preset]').forEach((b) => { b.disabled = !caps.can_watch_tv; });
+      document.getElementById('tvSleepTimerBtn').disabled = !caps.can_watch_tv && !caps.can_control_devices;
+    }
+
+    function updateSleepVisuals() {
+      const sleeping = Boolean(state.is_sleeping);
+      const badge = document.getElementById('charStatusBadge');
+      const sleepBtn = document.getElementById('sleepToggleBtn');
+
+      if (badge) {
+        badge.textContent = sleeping ? '💤 نائم' : '🧍 مستيقظ';
+      }
+      if (sleepBtn) {
+        sleepBtn.textContent = sleeping ? '☀️ استيقاظ' : '😴 نوم';
+        sleepBtn.classList.toggle('on', sleeping);
+      }
+
+      if (sleeping) {
+        boyVisualGroup.rotation.x = -Math.PI / 2;
+        boyVisualGroup.position.y = 0.56;
+      } else {
+        boyVisualGroup.rotation.x = 0;
+        boyVisualGroup.position.y = 0;
+      }
+    }
+
+    function syncYoutubeIframe() {
+      const vid = extractYoutubeId(state.tv_video_id) || 'dQw4w9WgXcQ';
+      const ytInp = document.getElementById('ytUrlOrIdInput');
+      if (ytInp && document.activeElement !== ytInp) {
+        ytInp.value = vid;
+      }
+
+      if (state.tv_power && !isDeviceHidden('tv_power')) {
+        if (currentVideoRenderedId !== vid) {
+          currentVideoRenderedId = vid;
+          document.getElementById('ytIframe').src = `https://www.youtube.com/embed/${vid}?autoplay=1&rel=0`;
+        }
+      } else {
+        currentVideoRenderedId = '';
+        document.getElementById('ytIframe').src = 'about:blank';
+      }
+    }
+
+    document.getElementById('openTvPanelBtn').onclick = async () => {
+      if (!state.tv_power && getCapabilities().can_watch_tv) {
+        await patchState({ tv_power: 1 });
+      }
+      tvPanel.classList.add('open');
+      syncYoutubeIframe();
+    };
+    document.getElementById('closeTvPanelBtn').onclick = () => {
+      tvPanel.classList.remove('open');
+      tvPanel.classList.remove('theater');
+    };
+    document.getElementById('tvTheaterBtn').onclick = () => {
+      tvPanel.classList.toggle('theater');
+    };
+
+    document.getElementById('applyYtVideoBtn').onclick = async () => {
+      const raw = document.getElementById('ytUrlOrIdInput').value;
+      const vid = extractYoutubeId(raw);
+      if (!vid) {
+        showToast('أدخل رابط يوتيوب صحيح أو ID مكون من 11 حرفاً');
+        return;
+      }
+      await patchState({ tv_power: 1, tv_video_id: vid });
+      tvPanel.classList.add('open');
+      syncYoutubeIframe();
+      showToast('📺 تم تشغيل الفيديو على التلفزيون');
+    };
+
+    document.querySelectorAll('[data-yt-preset]').forEach((btn) => {
+      btn.onclick = async () => {
+        const vid = btn.getAttribute('data-yt-preset');
+        await patchState({ tv_power: 1, tv_video_id: vid });
+        tvPanel.classList.add('open');
+        syncYoutubeIframe();
+        showToast('📺 تم تغيير الفيديو');
+      };
+    });
+
+    document.getElementById('tvSleepTimerBtn').onclick = () => {
+      if (tvSleepTimerId) {
+        clearTimeout(tvSleepTimerId);
+        tvSleepTimerId = null;
+        document.getElementById('tvTimerStatus').textContent = 'المؤقت: متوقف';
+        showToast('تم إلغاء مؤقت إطفاء التلفاز');
+        return;
+      }
+      const mins = 30;
+      document.getElementById('tvTimerStatus').textContent = `المؤقت: إطفاء تلقائي بعد ${mins} دقيقة`;
+      showToast(`⏱️ تم ضبط إطفاء التلفاز بعد ${mins} دقيقة`);
+      tvSleepTimerId = setTimeout(async () => {
+        tvSleepTimerId = null;
+        document.getElementById('tvTimerStatus').textContent = 'المؤقت: متوقف';
+        await patchState({ tv_power: 0 });
+        showToast('📺 تم إطفاء التلفاز تلقائياً بالمؤقت');
+      }, mins * 60 * 1000);
+    };
+
+    // وضع النوم والاستيقاظ
+    document.getElementById('sleepToggleBtn').onclick = async () => {
+      const nextSleep = state.is_sleeping ? 0 : 1;
+      if (nextSleep === 1) {
+        walkTarget = null;
+        walkMarker.visible = false;
+        autoRoamActive = false;
+        await patchState({
+          is_sleeping: 1,
+          boy_x: -4.8,
+          boy_z: -4.2,
+          tv_power: 0,
+          living_light: 0,
+          ac_power: 1
+        });
+        showToast('😴 الشخصية الآن في وضع النوم في غرفة النوم');
+      } else {
+        await patchState({
+          is_sleeping: 0,
+          boy_x: -4.5,
+          boy_z: -2.8,
+          curtains_open: 1
+        });
+        showToast('☀️ استيقظت الشخصية بنشاط');
+      }
+    };
+
+    // الروبوت المساعد لتوجيه الشخصية وتنفيذ الأوامر
+    document.getElementById('openRobotPanelBtn').onclick = () => robotPanel.classList.toggle('open');
+    document.getElementById('closeRobotPanelBtn').onclick = () => robotPanel.classList.remove('open');
+
+    async function executeRobotCommand(rawCmd) {
+      const cmd = String(rawCmd || '').trim().toLowerCase();
+      if (!cmd) return;
+      const replyBox = document.getElementById('robotReplyBox');
+
+      if (!getCapabilities().can_use_robot) {
+        showToast('🤖 الأدمن قيّد استخدام الروبوت لحسابك');
+        return;
+      }
+
+      if (cmd.includes('نام') || cmd.includes('نوم') || cmd.includes('sleep')) {
+        autoRoamActive = false;
+        walkTarget = null;
+        walkMarker.visible = false;
+        await patchState({ is_sleeping: 1, boy_x: -4.8, boy_z: -4.2, tv_power: 0 });
+        replyBox.textContent = '🤖 أمر منفذ: نقلت الشخصية للسرير وفعّلت وضع النوم.';
+        return;
+      }
+
+      if (cmd.includes('اصح') || cmd.includes('استيقظ') || cmd.includes('wake')) {
+        await patchState({ is_sleeping: 0, boy_x: -4.5, boy_z: -2.8 });
+        replyBox.textContent = '🤖 أمر منفذ: أيقظت الشخصية وأعدتها للوضع القائم.';
+        return;
+      }
+
+      if (cmd.includes('تلفزيون') || cmd.includes('يوتيوب') || cmd.includes('tv') || cmd.includes('youtube')) {
+        await patchState({ is_sleeping: 0, boy_x: -3.6, boy_z: 1.5, tv_power: 1 });
+        tvPanel.classList.add('open');
+        syncYoutubeIframe();
+        replyBox.textContent = '🤖 أمر منفذ: ذهبت الشخصية للصالة وشغّلت التلفزيون ويوتيوب.';
+        return;
+      }
+
+      if (cmd.includes('مطبخ') || cmd.includes('kitchen')) {
+        autoRoamActive = false;
+        walkTarget = new T.Vector3(3.4, 0.02, 2.2);
+        walkMarker.position.set(3.4, 0.03, 2.2);
+        walkMarker.visible = true;
+        await patchState({ is_sleeping: 0 });
+        replyBox.textContent = '🤖 أمر منفذ: الشخصية تتجه الآن نحو المطبخ تلقائياً.';
+        return;
+      }
+
+      if (cmd.includes('صالة') || cmd.includes('living')) {
+        autoRoamActive = false;
+        walkTarget = new T.Vector3(-2.6, 0.02, 1.5);
+        walkMarker.position.set(-2.6, 0.03, 1.5);
+        walkMarker.visible = true;
+        await patchState({ is_sleeping: 0 });
+        replyBox.textContent = '🤖 أمر منفذ: الشخصية تتجه الآن نحو الصالة.';
+        return;
+      }
+
+      if (cmd.includes('نوم') || cmd.includes('سرير') || cmd.includes('bedroom')) {
+        autoRoamActive = false;
+        walkTarget = new T.Vector3(-4.8, 0.02, -3.2);
+        walkMarker.position.set(-4.8, 0.03, -3.2);
+        walkMarker.visible = true;
+        replyBox.textContent = '🤖 أمر منفذ: الشخصية تتجه نحو غرفة النوم.';
+        return;
+      }
+
+      if (cmd.includes('مكتب') || cmd.includes('office')) {
+        autoRoamActive = false;
+        walkTarget = new T.Vector3(4.0, 0.02, -3.4);
+        walkMarker.position.set(4.0, 0.03, -3.4);
+        walkMarker.visible = true;
+        await patchState({ is_sleeping: 0 });
+        replyBox.textContent = '🤖 أمر منفذ: الشخصية تتجه نحو المكتب.';
+        return;
+      }
+
+      if (cmd.includes('تجول') || cmd.includes('تحرك') || cmd.includes('roam')) {
+        autoRoamActive = true;
+        await patchState({ is_sleeping: 0 });
+        replyBox.textContent = '🤖 أمر منفذ: بدأت الشخصية بالتجول التلقائي داخل الشقة.';
+        return;
+      }
+
+      autoRoamActive = true;
+      await patchState({ is_sleeping: 0 });
+      replyBox.textContent = `🤖 استلمت الأمر "${rawCmd}" — الشخصية تتحرك وتتفاعل تلقائياً.`;
+    }
+
+    document.getElementById('sendRobotCommandBtn').onclick = async () => {
+      const inp = document.getElementById('robotCommandInput');
+      const val = inp.value.trim();
+      if (!val) return;
+      inp.value = '';
+      await executeRobotCommand(val);
+    };
+
+    document.querySelectorAll('[data-robot-cmd]').forEach((btn) => {
+      btn.onclick = () => executeRobotCommand(btn.getAttribute('data-robot-cmd'));
+    });
+
+    function updateBoyCoordsLabel() {
+      const el = document.getElementById('boyCoordsText');
+      if (el) el.textContent = `X: ${characterGroup.position.x.toFixed(2)} | Z: ${characterGroup.position.z.toFixed(2)}`;
+      const xInp = document.getElementById('manualBoyX');
+      const zInp = document.getElementById('manualBoyZ');
+      if (xInp && document.activeElement !== xInp) xInp.value = characterGroup.position.x.toFixed(2);
+      if (zInp && document.activeElement !== zInp) zInp.value = characterGroup.position.z.toFixed(2);
+    }
+
+    function applySkyMode(mode) {
+      const cfg = SKY_CONFIGS[mode] || SKY_CONFIGS.sunset;
+      scene.background.setHex(cfg.bg);
+      scene.fog.color.setHex(cfg.fog);
+      sunLight.color.setHex(cfg.sunColor);
+      sunLight.intensity = cfg.sunIntensity;
+      hemiLight.intensity = cfg.hemiIntensity;
+      const skyBtn = document.getElementById('qbSky');
+      if (skyBtn) skyBtn.textContent = cfg.label;
+    }
+
+    function isDeviceHidden(key) {
+      return Array.isArray(state.hidden_devices) && state.hidden_devices.includes(key);
+    }
+
+    function renderAdminDevicesManager() {
+      const box = document.getElementById('adminDevicesList');
+      if (!box) return;
+      const isAdmin = getCurrentRole() === 'admin';
+      box.innerHTML = ALL_DEVICES.map((d) => {
+        const hidden = isDeviceHidden(d.key);
+        const statusSpan = hidden
+          ? '<span style="color:#f87171;">(مزال)</span>'
+          : '<span style="color:#4ade80;">(ظاهر)</span>';
+        return `
+          <div class="dev-manage-row">
+            <span>${escapeHtml(d.label)} ${statusSpan}</span>
+            <button class="btn ${hidden ? 'on' : 'danger'}" ${!isAdmin ? 'disabled' : ''} data-toggle-hide="${escapeAttr(d.key)}">
+              ${hidden ? '➕ إظهار' : '🗑️ إزالة'}
+            </button>
+          </div>
+        `;
+      }).join('');
+
+      box.querySelectorAll('[data-toggle-hide]').forEach((btn) => {
+        btn.onclick = async () => {
+          const key = btn.getAttribute('data-toggle-hide');
+          const cur = Array.isArray(state.hidden_devices) ? [...state.hidden_devices] : [];
+          const idx = cur.indexOf(key);
+          if (idx >= 0) cur.splice(idx, 1);
+          else cur.push(key);
+          await patchState({ hidden_devices: cur });
+        };
+      });
+    }
+
+    function applyDevicesVisuals() {
+      const on = (k) => Boolean(state[k]);
+
+      for (const d of ALL_DEVICES) {
+        const vis = deviceVisuals[d.key];
+        const hidden = isDeviceHidden(d.key);
+        if (vis && vis.root) vis.root.visible = !hidden;
+        const btn = document.querySelector(`[data-dev="${d.key}"]`);
+        if (btn) {
+          btn.style.display = hidden ? 'none' : 'inline-flex';
+          btn.classList.toggle('on', on(d.key));
+        }
+      }
+
+      if (deviceVisuals.living_light) {
+        const active = on('living_light') && !isDeviceHidden('living_light');
+        deviceVisuals.living_light.light.intensity = active ? 1.2 : 0;
+        deviceVisuals.living_light.mesh.material.emissiveIntensity = active ? 1.2 : 0;
+      }
+      if (deviceVisuals.bedroom_light) {
+        const active = on('bedroom_light') && !isDeviceHidden('bedroom_light');
+        deviceVisuals.bedroom_light.light.intensity = active ? 1.15 : 0;
+        deviceVisuals.bedroom_light.mesh.material.emissiveIntensity = active ? 1.15 : 0;
+      }
+      if (deviceVisuals.ac_power) {
+        deviceVisuals.ac_power.led.material.color.setHex(on('ac_power') ? 0x22c55e : 0x64748b);
+      }
+      if (deviceVisuals.tv_power) {
+        deviceVisuals.tv_power.screenMat.emissiveIntensity = on('tv_power') ? 0.9 : 0;
+      }
+      if (deviceVisuals.curtains_open) {
+        const open = on('curtains_open');
+        deviceVisuals.curtains_open.left.position.x = open ? 2.15 : 2.85;
+        deviceVisuals.curtains_open.right.position.x = open ? 4.65 : 3.95;
+      }
+      if (deviceVisuals.front_door_open) {
+        deviceVisuals.front_door_open.pivot.rotation.y = on('front_door_open') ? -Math.PI * 0.48 : 0;
+      }
+      if (deviceVisuals.coffee_maker) {
+        deviceVisuals.coffee_maker.glow.material.color.setHex(on('coffee_maker') ? 0x22c55e : 0xef4444);
+      }
+      if (deviceVisuals.smart_speaker) {
+        deviceVisuals.smart_speaker.ring.material.color.setHex(on('smart_speaker') ? 0x38bdf8 : 0x475569);
+      }
+      if (deviceVisuals.fireplace_on) {
+        deviceVisuals.fireplace_on.flameMat.emissiveIntensity = on('fireplace_on') ? 1.4 : 0;
+      }
+      if (deviceVisuals.desk_lamp) {
+        deviceVisuals.desk_lamp.shadeMat.emissiveIntensity = on('desk_lamp') ? 0.9 : 0;
+      }
+      if (deviceVisuals.security_cam) {
+        deviceVisuals.security_cam.lens.material.color.setHex(on('security_cam') ? 0x22c55e : 0xef4444);
+      }
+      if (deviceVisuals.robot_vac) {
+        deviceVisuals.robot_vac.top.material.color.setHex(on('robot_vac') ? 0x22c55e : 0x3b82f6);
+      }
+      if (deviceVisuals.air_purifier) {
+        deviceVisuals.air_purifier.indicator.material.color.setHex(on('air_purifier') ? 0x10b981 : 0x64748b);
+      }
+
+      updateSleepVisuals();
+      syncYoutubeIframe();
+      renderAdminDevicesManager();
+    }
+
+    function applyState(patch) {
+      Object.assign(state, patch);
+      if (patch && patch.hidden_devices !== undefined) {
+        state.hidden_devices = Array.isArray(patch.hidden_devices) ? patch.hidden_devices : [];
+      }
+
+      if (typeof state.boy_x === 'number' && typeof state.boy_z === 'number') {
+        characterGroup.position.x = T.MathUtils.clamp(state.boy_x, floorBounds.minX, floorBounds.maxX);
+        characterGroup.position.z = T.MathUtils.clamp(state.boy_z, floorBounds.minZ, floorBounds.maxZ);
+        if (typeof state.boy_yaw === 'number') {
+          boyVisualGroup.rotation.y = state.boy_yaw;
+        }
+        updateBoyCoordsLabel();
+      }
+
+      applySkyMode(state.sky_mode);
+      applyDevicesVisuals();
+    }
+
+    async function patchState(patch) {
+      if (getCurrentRole() === 'visitor') {
+        showToast('👀 وضع الزائر للعرض فقط — سجّل دخولك بحساب مستخدم للتحكم');
+        return;
+      }
+      applyState(patch);
+      if (!isServerOnline) return;
+      try {
+        const updated = await SilinaAPI.updateState(patch);
+        applyState(updated);
+      } catch (err) {
+        if (err && err.message) showToast(err.message);
+      }
+    }
+
+    document.getElementById('allLightsOnBtn').onclick = async () => {
+      await patchState({ living_light: 1, bedroom_light: 1, desk_lamp: 1 });
+      showToast('💡 تم تشغيل كل الإضاءات');
+    };
+    document.getElementById('allOffBtn').onclick = async () => {
+      const offPatch = { is_sleeping: 0 };
+      for (const d of ALL_DEVICES) offPatch[d.key] = 0;
+      await patchState(offPatch);
+      showToast('🔌 تم إيقاف كل الأجهزة');
+    };
+    document.getElementById('awayModeBtn').onclick = async () => {
+      await patchState({
+        living_light: 0,
+        bedroom_light: 0,
+        tv_power: 0,
+        fan_power: 0,
+        coffee_maker: 0,
+        fireplace_on: 0,
+        desk_lamp: 0,
+        curtains_open: 0,
+        front_door_open: 0,
+        security_cam: 1,
+        air_purifier: 1
+      });
+      showToast('🛡️ تم تفعيل وضع الخروج');
+    };
+    document.getElementById('restoreAllDevicesBtn').onclick = async () => {
+      await patchState({ hidden_devices: [] });
+      showToast('♻️ تم إظهار جميع الأجهزة');
+    };
+
+    document.querySelectorAll('[data-sky]').forEach((btn) => {
+      btn.onclick = async () => {
+        const mode = btn.getAttribute('data-sky');
+        await patchState({ sky_mode: mode });
+        showToast(`وضع الإضاءة: ${SKY_CONFIGS[mode].label}`);
+      };
+    });
+
+    document.querySelectorAll('[data-room]').forEach((btn) => {
+      btn.onclick = async () => {
+        const preset = ROOM_PRESETS[btn.getAttribute('data-room')];
+        if (!preset) return;
+        walkTarget = null;
+        walkMarker.visible = false;
+        autoRoamActive = false;
+        await patchState({ is_sleeping: 0, boy_x: preset.x, boy_z: preset.z, boy_yaw: preset.yaw });
+        showToast(`تم نقل الولد إلى ${preset.label}`);
+      };
+    });
+
+    document.getElementById('applyManualBoyBtn').onclick = async () => {
+      const xVal = Number.parseFloat(document.getElementById('manualBoyX').value);
+      const zVal = Number.parseFloat(document.getElementById('manualBoyZ').value);
+      if (!Number.isFinite(xVal) || !Number.isFinite(zVal)) {
+        showToast('أدخل إحداثيات X و Z صحيحة');
+        return;
+      }
+      walkTarget = null;
+      walkMarker.visible = false;
+      autoRoamActive = false;
+      await patchState({
+        boy_x: T.MathUtils.clamp(xVal, floorBounds.minX, floorBounds.maxX),
+        boy_z: T.MathUtils.clamp(zVal, floorBounds.minZ, floorBounds.maxZ)
+      });
+      showToast('📍 تم نقل الولد للإحداثيات المحددة');
+    };
+
+    document.querySelectorAll('[data-dev]').forEach((btn) => {
+      btn.onclick = async () => {
+        const key = btn.getAttribute('data-dev');
+        if (isDeviceHidden(key)) return;
+        const label = btn.getAttribute('data-label') || key;
+        const nextVal = state[key] ? 0 : 1;
+        await patchState({ [key]: nextVal });
+        if (key === 'tv_power' && nextVal === 1) {
+          tvPanel.classList.add('open');
+          syncYoutubeIframe();
+        }
+        showToast(`${label}: ${nextVal ? 'تشغيل' : 'إيقاف'}`);
+      };
+    });
+
+    function hasOpenOverlay() {
+      return Boolean(document.querySelector('.overlay.show'));
+    }
+
+    const SKY_ORDER = ['day', 'sunset', 'night'];
+    document.getElementById('qbSky').onclick = async () => {
+      const idx = SKY_ORDER.indexOf(state.sky_mode);
+      const nextMode = SKY_ORDER[(idx + 1) % SKY_ORDER.length];
+      await patchState({ sky_mode: nextMode });
+      showToast(`وضع الإضاءة: ${SKY_CONFIGS[nextMode].label}`);
+    };
+
+    document.getElementById('qbResetPos').onclick = async () => {
+      walkTarget = null;
+      walkMarker.visible = false;
+      autoRoamActive = false;
+      await patchState({ boy_x: 0, boy_z: 0, boy_yaw: 0 });
+      showToast('↩️ تمت إعادة الولد إلى المركز');
+    };
+
+    document.getElementById('saveBoyPosBtn').onclick = async () => {
+      await patchState({
+        boy_x: Number(characterGroup.position.x.toFixed(3)),
+        boy_z: Number(characterGroup.position.z.toFixed(3)),
+        boy_yaw: Number(boyVisualGroup.rotation.y.toFixed(3))
+      });
+      showToast('💾 تم حفظ موقع الولد');
+    };
+
+    document.querySelectorAll('#adminTabBar .tab-btn').forEach((btn) => {
+      btn.onclick = () => {
+        const tabName = btn.getAttribute('data-tab');
+        document.querySelectorAll('#adminTabBar .tab-btn').forEach((b) => b.classList.toggle('on', b === btn));
+        document.querySelectorAll('.tab-panel').forEach((p) => p.classList.toggle('active', p.id === `tab-${tabName}`));
+        if (tabName === 'users') loadDashboardUsers();
+        if (tabName === 'devices') renderAdminDevicesManager();
+        if (tabName === 'messages') { syncMessageTargetsSelect(); loadMessages(); }
+        if (tabName === 'logs') loadDashboardLogs();
+      };
+    });
+
+    // الرسائل
+    function renderMessageCard(m, canDelete) {
+      const levelClass = m.level === 'alert' ? 'alert' : (m.level === 'warn' ? 'warn' : '');
+      const targetLabel = m.target_username ? `إلى: ${escapeHtml(m.target_username)}` : 'للجميع';
+      const safeId = Number.parseInt(m.id, 10) || 0;
+      const delBtn = canDelete
+        ? `<button class="btn danger" style="padding:3px 7px;font-size:10.5px;" data-del-msg="${safeId}">✕</button>`
+        : '';
+      return `
+        <div class="msg-card ${levelClass}">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;margin-bottom:3px;">
+            <strong>${escapeHtml(m.title)}</strong>
+            <div style="display:flex;align-items:center;gap:5px;">
+              <span style="color:#94a3b8;font-size:10.5px;">${targetLabel}</span>
+              ${delBtn}
+            </div>
+          </div>
+          <div style="color:#e2e8f0;line-height:1.45;">${escapeHtml(m.body)}</div>
+        </div>
+      `;
+    }
+
+    function renderMessagesLists() {
+      const inboxBox = document.getElementById('userInboxList');
+      const sentBox = document.getElementById('adminSentMsgsBox');
+      const badge = document.getElementById('msgCountBadge');
+      if (badge) badge.textContent = `(${latestMessages.length})`;
+
+      const htmlForUser = latestMessages.length
+        ? latestMessages.map((m) => renderMessageCard(m, false)).join('')
+        : '<div style="color:#94a3b8;">لا توجد رسائل حالياً.</div>';
+      if (inboxBox) inboxBox.innerHTML = htmlForUser;
+
+      if (sentBox) {
+        const isAdmin = getCurrentRole() === 'admin';
+        sentBox.innerHTML = latestMessages.length
+          ? latestMessages.map((m) => renderMessageCard(m, isAdmin)).join('')
+          : '<div style="color:#94a3b8;">لا توجد رسائل مرسلة.</div>';
+
+        sentBox.querySelectorAll('[data-del-msg]').forEach((b) => {
+          b.onclick = async () => {
+            try {
+              await SilinaAPI.deleteAdminMessage(b.getAttribute('data-del-msg'));
+              showToast('تم حذف الرسالة');
+              await loadMessages();
+              await loadDashboardLogs();
+            } catch (err) {
+              showToast(err.message || 'تعذر حذف الرسالة');
+            }
+          };
+        });
+      }
+    }
+
+    async function loadMessages(notifyNew = false) {
+      if (!isServerOnline || !SilinaAPI.isAuthenticated()) return;
+      try {
+        const rows = await SilinaAPI.getMessages();
+        latestMessages = Array.isArray(rows) ? rows : [];
+        if (latestMessages.length) {
+          const maxId = Math.max(...latestMessages.map((r) => Number(r.id || 0)));
+          if (notifyNew && lastSeenMessageId > 0 && maxId > lastSeenMessageId) {
+            const newest = latestMessages.find((r) => Number(r.id) === maxId);
+            if (newest) showToast(`📩 رسالة جديدة: ${newest.title}`);
+          }
+          lastSeenMessageId = Math.max(lastSeenMessageId, maxId);
+        }
+        renderMessagesLists();
+      } catch (_) {}
+    }
+
+    async function syncMessageTargetsSelect() {
+      const sel = document.getElementById('msgTargetSelect');
+      if (!sel || !isServerOnline || getCurrentRole() !== 'admin') return;
+      try {
+        const users = await SilinaAPI.listUsers();
+        const prevVal = sel.value || 'all';
+        const nonAdminUsers = users.filter((u) => u.role !== 'admin');
+        sel.innerHTML =
+          `<option value="all">كل المستخدمين (عامة)</option>` +
+          nonAdminUsers.map((u) => `<option value="${escapeAttr(u.username)}">${escapeHtml(u.username)} (${escapeHtml(u.role)})</option>`).join('');
+        if ([...sel.options].some((o) => o.value === prevVal)) sel.value = prevVal;
+      } catch (_) {}
+    }
+
+    document.getElementById('sendAdminMsgBtn').onclick = async () => {
+      const targetUsername = document.getElementById('msgTargetSelect').value;
+      const level = document.getElementById('msgLevelSelect').value;
+      const title = document.getElementById('msgTitleInput').value.trim();
+      const body = document.getElementById('msgBodyInput').value.trim();
+      try {
+        await SilinaAPI.sendAdminMessage({ targetUsername, level, title, body });
+        document.getElementById('msgTitleInput').value = '';
+        document.getElementById('msgBodyInput').value = '';
+        showToast('📤 تم إرسال الرسالة');
+        await loadMessages(false);
+        await loadDashboardLogs();
+      } catch (err) {
+        showToast(err.message || 'تعذر إرسال الرسالة');
+      }
+    };
+
+    document.getElementById('refreshAdminMsgsBtn').onclick = () => loadMessages(false);
+    document.getElementById('inboxBtn').onclick = async () => {
+      await loadMessages(false);
+      inboxModal.classList.add('show');
+    };
+    document.getElementById('closeInboxModal').onclick = () => inboxModal.classList.remove('show');
+
+    // داش بورد المستخدمين والخصائص والجلسات
+    async function loadDashboardUsers() {
+      const listEl = document.getElementById('adminUsersList');
+      if (!listEl) return;
+      if (!isServerOnline || getCurrentRole() !== 'admin') {
+        listEl.innerHTML = '<div style="color:#94a3b8;font-size:11.5px;">غير متاح.</div>';
+        return;
+      }
+      try {
+        const users = await SilinaAPI.listUsers();
+        const onlineCount = users.filter((u) => u.isOnline).length;
+        const lockedCount = users.filter((u) => u.isLocked).length;
+
+        document.getElementById('statTotalUsers').textContent = String(users.length);
+        document.getElementById('statOnlineUsers').textContent = String(onlineCount);
+        document.getElementById('statLockedUsers').textContent = String(lockedCount);
+
+        if (!users.length) {
+          listEl.innerHTML = '<div style="color:#94a3b8;font-size:11.5px;">لا يوجد مستخدمون.</div>';
+          return;
+        }
+
+        listEl.innerHTML = users.map((u) => {
+          const isAdminRow = u.role === 'admin';
+          const roleText = u.role === 'admin' ? 'إدارة' : (u.role === 'guest' ? 'مستخدم' : 'زائر');
+          const onlineBadge = u.isOnline
+            ? '<span style="color:#4ade80;">● متصل</span>'
+            : '<span style="color:#94a3b8;">○ غير متصل</span>';
+          const lockTag = u.isLocked ? ' <span style="color:#f87171;">(مقفول)</span>' : '';
+          const safeId = Number.parseInt(u.id, 10) || 0;
+          const nextRole = u.role === 'guest' ? 'visitor' : 'guest';
+          const caps = u.capabilities || {};
+
+          const capButtonsHtml = !isAdminRow
+            ? Object.keys(CAP_LABELS).map((k) => {
+                const enabled = Boolean(caps[k]);
+                return `<button class="btn ${enabled ? 'on' : ''}" style="padding:2px 6px;font-size:10.5px;" data-cap-user="${safeId}" data-cap-key="${k}" data-cap-val="${enabled ? '0' : '1'}">${CAP_LABELS[k]}: ${enabled ? '✓' : '✕'}</button>`;
+              }).join('')
+            : '<span style="color:#93c5fd;font-size:10.5px;">جميع الخصائص مفعّلة للمشرف</span>';
+
+          const unlockBtn = u.isLocked
+            ? `<button class="btn" style="padding:3px 7px;font-size:10.5px;" data-unlock-id="${safeId}">🔓 فك القفل</button>`
+            : '';
+          const roleBtn = !isAdminRow
+            ? `<button class="btn" style="padding:3px 7px;font-size:10.5px;" data-role-id="${safeId}" data-next-role="${nextRole}">⇄ ${nextRole === 'visitor' ? 'زائر' : 'مستخدم'}</button>`
+            : '';
+          const msgDirectBtn = !isAdminRow
+            ? `<button class="btn" style="padding:3px 7px;font-size:10.5px;" data-msg-user="${escapeAttr(u.username)}">✉️ رسالة</button>`
+            : '';
+          const logoutBtn = !isAdminRow
+            ? `<button class="btn danger" style="padding:3px 7px;font-size:10.5px;" data-force-logout="${safeId}">⏏️ إخراج</button>`
+            : '';
+
+          return `
+            <div class="user-card">
+              <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;">
+                <div>
+                  <strong>${escapeHtml(u.username)}</strong> • <span style="color:#93c5fd;">${escapeHtml(roleText)}</span> ${onlineBadge}${lockTag}
+                </div>
+                <span style="color:#94a3b8;font-size:10.5px;">${escapeHtml(u.lastActivity || '')}</span>
+              </div>
+              <div style="color:#64748b;font-size:10.5px;margin-top:2px;">
+                IP: ${escapeHtml(u.lastIp || '-')} ${u.lastSeenAt ? '• ' + escapeHtml(u.lastSeenAt.slice(11, 19)) : ''}
+              </div>
+              <div class="cap-pills">${capButtonsHtml}</div>
+              <div class="user-actions">${unlockBtn}${roleBtn}${msgDirectBtn}${logoutBtn}</div>
+            </div>
+          `;
+        }).join('');
+
+        listEl.querySelectorAll('[data-cap-user]').forEach((b) => {
+          b.onclick = async () => {
+            const uid = b.getAttribute('data-cap-user');
+            const key = b.getAttribute('data-cap-key');
+            const val = b.getAttribute('data-cap-val') === '1';
+            try {
+              await SilinaAPI.updateUserCapabilities(uid, { [key]: val });
+              showToast('تم تحديث خاصية المستخدم');
+              await loadDashboardUsers();
+              await loadDashboardLogs();
+            } catch (err) {
+              showToast(err.message || 'تعذر تحديث الخاصية');
+            }
+          };
+        });
+
+        listEl.querySelectorAll('[data-unlock-id]').forEach((b) => {
+          b.onclick = async () => {
+            try {
+              const res = await SilinaAPI.unlockUser(b.getAttribute('data-unlock-id'));
+              showToast(res.message || 'تم فك القفل');
+              await loadDashboardUsers();
+              await loadDashboardLogs();
+            } catch (err) {
+              showToast(err.message || 'تعذر فك القفل');
+            }
+          };
+        });
+
+        listEl.querySelectorAll('[data-role-id]').forEach((b) => {
+          b.onclick = async () => {
+            try {
+              await SilinaAPI.updateUserRole(b.getAttribute('data-role-id'), b.getAttribute('data-next-role'));
+              showToast('تم تحديث دور الحساب');
+              await loadDashboardUsers();
+              await loadDashboardLogs();
+              await syncMessageTargetsSelect();
+            } catch (err) {
+              showToast(err.message || 'تعذر تغيير الدور');
+            }
+          };
+        });
+
+        listEl.querySelectorAll('[data-msg-user]').forEach((b) => {
+          b.onclick = async () => {
+            const targetUser = b.getAttribute('data-msg-user');
+            document.querySelectorAll('#adminTabBar .tab-btn').forEach((t) => t.classList.toggle('on', t.getAttribute('data-tab') === 'messages'));
+            document.querySelectorAll('.tab-panel').forEach((p) => p.classList.toggle('active', p.id === 'tab-messages'));
+            await syncMessageTargetsSelect();
+            const sel = document.getElementById('msgTargetSelect');
+            if (sel) sel.value = targetUser;
+            document.getElementById('msgTitleInput').focus();
+          };
+        });
+
+        listEl.querySelectorAll('[data-force-logout]').forEach((b) => {
+          b.onclick = async () => {
+            try {
+              const res = await SilinaAPI.forceLogoutUser(b.getAttribute('data-force-logout'));
+              showToast(res.message || 'تم إنهاء الجلسة');
+              await loadDashboardUsers();
+              await loadDashboardLogs();
+            } catch (err) {
+              showToast(err.message || 'تعذر إنهاء الجلسة');
+            }
+          };
+        });
+      } catch (_) {
+        listEl.innerHTML = '<div style="color:#f87171;font-size:11.5px;">تعذر جلب المستخدمين.</div>';
+      }
+    }
+
+    document.getElementById('refreshUsersBtn').onclick = loadDashboardUsers;
+
+    document.getElementById('createUserBtn').onclick = async () => {
+      const u = document.getElementById('newUserName').value.trim();
+      const p = document.getElementById('newUserPass').value;
+      const r = document.getElementById('newUserRole').value;
+      try {
+        await SilinaAPI.createUser(u, p, r);
+        document.getElementById('newUserName').value = '';
+        document.getElementById('newUserPass').value = '';
+        showToast(`تم إنشاء الحساب ${u}`);
+        await loadDashboardUsers();
+        await loadDashboardLogs();
+        await syncMessageTargetsSelect();
+      } catch (err) {
+        showToast(err.message || 'تعذر إنشاء الحساب');
+      }
+    };
+
+    async function loadDashboardLogs() {
+      const box = document.getElementById('dashLogsList');
+      if (!box) return;
+      if (!isServerOnline || getCurrentRole() !== 'admin') {
+        box.innerHTML = '<div style="color:#94a3b8;">غير متاح.</div>';
+        return;
+      }
+      try {
+        const rows = await SilinaAPI.getLogs();
+        box.innerHTML = rows.length
+          ? rows.slice(0, 18).map((r) => `
+              <div class="log-row">
+                <strong>${escapeHtml(r.action)}</strong> • <span style="color:#94a3b8;">${escapeHtml(r.username)}</span>
+                <div style="color:#cbd5e1;margin-top:2px;">${escapeHtml(r.details || '')}</div>
+              </div>
+            `).join('')
+          : '<div style="color:#94a3b8;">لا توجد سجلات بعد.</div>';
+      } catch (_) {
+        box.innerHTML = '<div style="color:#f87171;">تعذر جلب السجل.</div>';
+      }
+    }
+
+    document.getElementById('clearLogsBtn').onclick = async () => {
+      try {
+        await SilinaAPI.clearLogs();
+        showToast('تم مسح سجل النشاط');
+        await loadDashboardLogs();
+      } catch (err) {
+        showToast(err.message || 'تعذر مسح السجل');
+      }
+    };
+
+    document.getElementById('dashToggleBtn').onclick = () => {
+      if (getCurrentRole() !== 'admin') return;
+      dashDrawer.classList.toggle('open');
+      if (dashDrawer.classList.contains('open')) {
+        loadDashboardUsers();
+        renderAdminDevicesManager();
+        syncMessageTargetsSelect();
+        loadMessages(false);
+        loadDashboardLogs();
+      }
+    };
+    document.getElementById('closeDashBtn').onclick = () => dashDrawer.classList.remove('open');
+    document.getElementById('refreshLogsBtn').onclick = loadDashboardLogs;
+
+    document.getElementById('changePassBtn').onclick = async () => {
+      const curP = document.getElementById('curPassInput').value;
+      const newP = document.getElementById('newPassInput').value;
+      try {
+        const res = await SilinaAPI.changePassword(curP, newP);
+        document.getElementById('curPassInput').value = '';
+        document.getElementById('newPassInput').value = '';
+        showToast(res.message || 'تم تحديث كلمة المرور');
+      } catch (err) {
+        showToast(err.message || 'تعذر تغيير كلمة المرور');
+      }
+    };
+
+    document.getElementById('revokeSessionsBtn').onclick = async () => {
+      try {
+        const res = await SilinaAPI.revokeSessions();
+        showToast(res.message || 'تم إبطال الجلسات');
+        SilinaAPI.logout();
+      } catch (err) {
+        showToast(err.message || 'تعذر إبطال الجلسات');
+      }
+    };
+
+    const raycaster = new T.Raycaster();
+    const pointer = new T.Vector2();
+    const interactHint = document.getElementById('interactHint');
+    let walkTarget = null;
+
+    function pickDeviceAt(clientX, clientY) {
+      pointer.x = (clientX / window.innerWidth) * 2 - 1;
+      pointer.y = -(clientY / window.innerHeight) * 2 + 1;
+      raycaster.setFromCamera(pointer, camera);
+      const hits = raycaster.intersectObjects(interactiveMeshes, false);
+      for (const h of hits) {
+        const key = h.object && h.object.userData && h.object.userData.devKey;
+        if (key && !isDeviceHidden(key)) {
+          return h.object.userData;
+        }
+      }
+      return null;
+    }
+
+    function getFloorClickPoint(clientX, clientY) {
+      pointer.x = (clientX / window.innerWidth) * 2 - 1;
+      pointer.y = -(clientY / window.innerHeight) * 2 + 1;
+      raycaster.setFromCamera(pointer, camera);
+      const floorPlane = new T.Plane(new T.Vector3(0, 1, 0), -0.02);
+      const pt = new T.Vector3();
+      if (!raycaster.ray.intersectPlane(floorPlane, pt)) return null;
+      pt.x = T.MathUtils.clamp(pt.x, floorBounds.minX, floorBounds.maxX);
+      pt.z = T.MathUtils.clamp(pt.z, floorBounds.minZ, floorBounds.maxZ);
+      pt.y = 0.02;
+      return pt;
+    }
+
+    canvas.addEventListener('pointermove', (e) => {
+      if (hasOpenOverlay()) {
+        canvas.style.cursor = 'default';
+        return;
+      }
+      const hit = pickDeviceAt(e.clientX, e.clientY);
+      if (hit) {
+        canvas.style.cursor = 'pointer';
+        interactHint.textContent = `🎛️ انقر لتبديل: ${hit.devTitle}`;
+      } else {
+        canvas.style.cursor = 'grab';
+        interactHint.textContent = '🚶 WASD / الأسهم للحريك • Shift للركض • نقرة على جهاز • نقرتان للمشي';
+      }
+    });
+
+    let pointerDownPos = { x: 0, y: 0 };
+    canvas.addEventListener('pointerdown', (e) => {
+      pointerDownPos = { x: e.clientX, y: e.clientY };
+    });
+    canvas.addEventListener('click', async (e) => {
+      if (hasOpenOverlay()) return;
+      const movedDist = Math.hypot(e.clientX - pointerDownPos.x, e.clientY - pointerDownPos.y);
+      if (movedDist > 6) return;
+      const hit = pickDeviceAt(e.clientX, e.clientY);
+      if (hit) {
+        const nextVal = state[hit.devKey] ? 0 : 1;
+        await patchState({ [hit.devKey]: nextVal });
+        if (hit.devKey === 'tv_power' && nextVal === 1) {
+          tvPanel.classList.add('open');
+          syncYoutubeIframe();
+        }
+        showToast(`${hit.devTitle}: ${nextVal ? 'تشغيل' : 'إيقاف'}`);
+      }
+    });
+
+    const keysPressed = {};
+    window.addEventListener('keydown', (e) => {
+      if (['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName)) return;
+      keysPressed[e.code] = true;
+    });
+    window.addEventListener('keyup', (e) => {
+      keysPressed[e.code] = false;
+    });
+
+    function animateBoyLimbs(moving, isSprint, elapsed, dt) {
+      if (!boyRig.leftLeg) return;
+      if (state.is_sleeping) {
+        boyRig.leftLeg.rotation.x = 0;
+        boyRig.rightLeg.rotation.x = 0;
+        boyRig.leftArm.rotation.x = -0.2;
+        boyRig.rightArm.rotation.x = -0.2;
+        return;
+      }
+
+      const strideFreq = isSprint ? 15 : 10;
+      const swingAmp = moving ? (isSprint ? 0.85 : 0.58) : 0;
+      const wave = Math.sin(elapsed * strideFreq);
+
+      const smooth = Math.min(1, dt * 14);
+      boyRig.leftLeg.rotation.x += (wave * swingAmp - boyRig.leftLeg.rotation.x) * smooth;
+      boyRig.rightLeg.rotation.x += (-wave * swingAmp - boyRig.rightLeg.rotation.x) * smooth;
+
+      boyRig.leftArm.rotation.x += (-wave * swingAmp * 0.85 - boyRig.leftArm.rotation.x) * smooth;
+      boyRig.rightArm.rotation.x += (wave * swingAmp * 0.85 - boyRig.rightArm.rotation.x) * smooth;
+
+      if (boyRig.torso) {
+        const targetLean = moving ? (isSprint ? 0.16 : 0.08) : 0;
+        boyRig.torso.rotation.x += (targetLean - boyRig.torso.rotation.x) * smooth;
+        boyRig.torso.scale.y = moving ? 1 : 1 + Math.sin(elapsed * 2.5) * 0.015;
+      }
+
+      if (boyRig.head) {
+        boyRig.head.rotation.y = moving ? Math.sin(elapsed * 4) * 0.06 : Math.sin(elapsed * 1.4) * 0.12;
+      }
+    }
+
+    function updateDevicesAnimation(dt, elapsed) {
+      if (deviceVisuals.fan_power && state.fan_power && !isDeviceHidden('fan_power')) {
+        deviceVisuals.fan_power.blades.rotation.y += dt * 14;
+      }
+      if (deviceVisuals.robot_vac && state.robot_vac && !isDeviceHidden('robot_vac')) {
+        deviceVisuals.robot_vac.group.position.x = 0.8 + Math.sin(elapsed * 1.1) * 1.2;
+        deviceVisuals.robot_vac.group.position.z = 2.2 + Math.cos(elapsed * 1.1) * 0.9;
+        deviceVisuals.robot_vac.group.rotation.y = elapsed * 1.1;
+      }
+    }
+
+    function updateBoyMovement(dt, elapsed) {
+      if (hasOpenOverlay()) return;
+
+      const caps = getCapabilities();
+      const canMove = caps.can_move || getCurrentRole() === 'visitor' && !isServerOnline;
+
+      if (autoRoamActive && !walkTarget && canMove && !state.is_sleeping) {
+        const rx = T.MathUtils.clamp(characterGroup.position.x + (Math.random() - 0.5) * 6, floorBounds.minX, floorBounds.maxX);
+        const rz = T.MathUtils.clamp(characterGroup.position.z + (Math.random() - 0.5) * 6, floorBounds.minZ, floorBounds.maxZ);
+        walkTarget = new T.Vector3(rx, 0.02, rz);
+      }
+
+      const isSprint = Boolean(keysPressed['ShiftLeft'] || keysPressed['ShiftRight']);
+      const moveSpeed = (isSprint ? 4.4 : 2.6) * dt;
+
+      const forward = new T.Vector3();
+      camera.getWorldDirection(forward);
+      forward.y = 0;
+      if (forward.lengthSq() > 0) forward.normalize();
+      const right = new T.Vector3().crossVectors(forward, camera.up).normalize();
+
+      const inputDir = new T.Vector3();
+      if (canMove && !state.is_sleeping) {
+        if (keysPressed['KeyW'] || keysPressed['ArrowUp']) inputDir.add(forward);
+        if (keysPressed['KeyS'] || keysPressed['ArrowDown']) inputDir.sub(forward);
+        if (keysPressed['KeyD'] || keysPressed['ArrowRight']) inputDir.add(right);
+        if (keysPressed['KeyA'] || keysPressed['ArrowLeft']) inputDir.sub(right);
+      }
+
+      let moving = false;
+      const prevPos = characterGroup.position.clone();
+
+      if (inputDir.lengthSq() > 0) {
+        walkTarget = null;
+        walkMarker.visible = false;
+        autoRoamActive = false;
+        inputDir.normalize();
+        characterGroup.position.addScaledVector(inputDir, moveSpeed);
+        moving = true;
+      } else if (walkTarget && canMove && !state.is_sleeping) {
+        const toTarget = new T.Vector3().subVectors(walkTarget, characterGroup.position);
+        toTarget.y = 0;
+        const dist = toTarget.length();
+        if (dist > 0.08) {
+          toTarget.normalize();
+          characterGroup.position.addScaledVector(toTarget, Math.min(moveSpeed, dist));
+          moving = true;
+        } else {
+          walkTarget = null;
+          walkMarker.visible = false;
+        }
+      }
+
+      characterGroup.position.x = T.MathUtils.clamp(characterGroup.position.x, floorBounds.minX, floorBounds.maxX);
+      characterGroup.position.z = T.MathUtils.clamp(characterGroup.position.z, floorBounds.minZ, floorBounds.maxZ);
+
+      const deltaMove = new T.Vector3().subVectors(characterGroup.position, prevPos);
+      deltaMove.y = 0;
+
+      if (moving && deltaMove.lengthSq() > 0.00001) {
+        const targetYaw = Math.atan2(deltaMove.x, deltaMove.z);
+        let diff = targetYaw - boyVisualGroup.rotation.y;
+        while (diff > Math.PI) diff -= Math.PI * 2;
+        while (diff < -Math.PI) diff += Math.PI * 2;
+        boyVisualGroup.rotation.y += diff * Math.min(1, dt * 12);
+        boyVisualGroup.position.y = Math.abs(Math.sin(elapsed * (isSprint ? 15 : 10))) * 0.045;
+
+        if (followBoy) {
+          camera.position.add(deltaMove);
+          controls.target.add(deltaMove);
+        }
+        updateBoyCoordsLabel();
+      } else if (!state.is_sleeping) {
+        boyVisualGroup.position.y = 0;
+      }
+
+      animateBoyLimbs(moving, isSprint, elapsed, dt);
+
+      if (walkMarker.visible) {
+        walkMarker.rotation.z = elapsed * 2.5;
+      }
+    }
+
+    canvas.addEventListener('dblclick', (e) => {
+      if (hasOpenOverlay()) return;
+      if (!getCapabilities().can_move && isServerOnline) {
+        showToast('🚫 خاصية الحركة غير مفعّلة لحسابك');
+        return;
+      }
+      if (pickDeviceAt(e.clientX, e.clientY)) return;
+      const floorPt = getFloorClickPoint(e.clientX, e.clientY);
+      if (floorPt) {
+        autoRoamActive = false;
+        walkTarget = floorPt;
+        walkMarker.position.set(floorPt.x, 0.03, floorPt.z);
+        walkMarker.visible = true;
+        showToast('🚶 الولد يتجه إلى النقطة المحددة');
+      }
+    });
+
+    function openAppropriateLoginModal() {
+      if (isAdminLoginRoute()) {
+        userLoginModal.classList.remove('show');
+        adminLoginModal.classList.add('show');
+        loadCaptchaFor('admin');
+      } else {
+        adminLoginModal.classList.remove('show');
+        userLoginModal.classList.add('show');
+        loadCaptchaFor('user');
+      }
+    }
+
+    window.addEventListener('silina-auth-required', () => openAppropriateLoginModal());
+    window.addEventListener('hashchange', () => {
+      if (isAdminLoginRoute() && getCurrentRole() !== 'admin') {
+        userLoginModal.classList.remove('show');
+        adminLoginModal.classList.add('show');
+        loadCaptchaFor('admin');
+      }
+    });
+
+    document.getElementById('openUserLoginBtn').onclick = () => {
+      adminLoginModal.classList.remove('show');
+      userLoginModal.classList.add('show');
+      loadCaptchaFor('user');
+    };
+    document.getElementById('closeUserLoginModal').onclick = () => userLoginModal.classList.remove('show');
+    document.getElementById('closeAdminLoginModal').onclick = () => adminLoginModal.classList.remove('show');
+    document.getElementById('logoutBtn').onclick = () => SilinaAPI.logout();
+
+    async function sendPresenceHeartbeat() {
+      if (!isServerOnline || !SilinaAPI.isAuthenticated()) return;
+      const act = state.is_sleeping
+        ? 'نائم 💤'
+        : (state.tv_power ? 'يشاهد يوتيوب 📺' : (autoRoamActive ? 'يتجول مع الروبوت 🤖' : 'داخل الشقة'));
+      try {
+        await SilinaAPI.heartbeat(act);
+      } catch (_) {}
+    }
+
+    async function completeLoginAndSync(usernameLabel) {
+      applyRolePermissions();
+      userLoginModal.classList.remove('show');
+      adminLoginModal.classList.remove('show');
+      const serverState = await SilinaAPI.getState();
+      applyState(serverState);
+      await sendPresenceHeartbeat();
+      await loadMessages(false);
+      if (getCurrentRole() === 'admin' && dashDrawer.classList.contains('open')) {
+        await loadDashboardUsers();
+        await syncMessageTargetsSelect();
+        await loadDashboardLogs();
+      }
+      showToast(`أهلاً بك يا ${usernameLabel}`);
+    }
+
+    document.getElementById('userLoginSubmit').onclick = async () => {
+      const u = document.getElementById('userLoginName').value.trim();
+      const p = document.getElementById('userLoginPass').value;
+      const ans = document.getElementById('userCaptchaInput').value.trim();
+      const errEl = document.getElementById('userLoginErr');
+      errEl.textContent = '';
+      try {
+        const data = await SilinaAPI.loginUser(u, p, userCaptchaId, ans);
+        document.getElementById('userLoginPass').value = '';
+        await completeLoginAndSync(data.username);
+      } catch (err) {
+        errEl.textContent = err.message || 'فشل تسجيل الدخول';
+        await loadCaptchaFor('user');
+      }
+    };
+
+    document.getElementById('quickVisitorBtn').onclick = () => {
+      const errEl = document.getElementById('userLoginErr');
+      errEl.textContent = '';
+      document.getElementById('userLoginName').value = 'visitor';
+      document.getElementById('userLoginPass').value = 'visitor123';
+      showToast('تم تعبئة بيانات الزائر — اكتب رمز التحقق ثم اضغط دخول');
+    };
+
+    document.getElementById('adminLoginSubmit').onclick = async () => {
+      const u = document.getElementById('adminLoginName').value.trim();
+      const p = document.getElementById('adminLoginPass').value;
+      const ans = document.getElementById('adminCaptchaInput').value.trim();
+      const errEl = document.getElementById('adminLoginErr');
+      errEl.textContent = '';
+      try {
+        const data = await SilinaAPI.loginAdmin(u, p, adminCaptchaId, ans);
+        document.getElementById('adminLoginPass').value = '';
+        await completeLoginAndSync(data.username);
+      } catch (err) {
+        errEl.textContent = err.message || 'فشل دخول الإدارة';
+        await loadCaptchaFor('admin');
+      }
+    };
+
+    setInterval(async () => {
+      if (document.hidden || !isServerOnline || !SilinaAPI.isAuthenticated()) return;
+      try {
+        const me = await SilinaAPI.getCurrentUser();
+        SilinaAPI.setToken(SilinaAPI.getToken(), me);
+        applyRolePermissions();
+        const latestState = await SilinaAPI.getState();
+        applyState(latestState);
+        await sendPresenceHeartbeat();
+        await loadMessages(true);
+        if (getCurrentRole() === 'admin' && dashDrawer.classList.contains('open')) {
+          await loadDashboardUsers();
+        }
+      } catch (_) {}
+    }, 8000);
+
+    async function bootstrap() {
+      isServerOnline = await SilinaAPI.checkHealth();
+      const dot = document.getElementById('connDot');
+      const text = document.getElementById('connText');
+
+      if (!isServerOnline) {
+        dot.classList.add('offline');
+        text.textContent = 'معاينة محلية';
+        applyRolePermissions();
+        applyState(state);
+        return;
+      }
+
+      dot.classList.remove('offline');
+      text.textContent = 'متصل بالخادم';
+
+      if (!SilinaAPI.isAuthenticated()) {
+        applyRolePermissions();
+        openAppropriateLoginModal();
+        return;
+      }
+
+      try {
+        const me = await SilinaAPI.getCurrentUser();
+        SilinaAPI.setToken(SilinaAPI.getToken(), me);
+        applyRolePermissions();
+        if (isAdminLoginRoute() && me.role !== 'admin') {
+          adminLoginModal.classList.add('show');
+          await loadCaptchaFor('admin');
+        }
+        const serverState = await SilinaAPI.getState();
+        applyState(serverState);
+        await sendPresenceHeartbeat();
+        await loadMessages(false);
+      } catch (_) {
+        applyRolePermissions();
+        openAppropriateLoginModal();
+      }
+    }
+
+    bootstrap();
+
+    const clock = new T.Clock();
+    function animate() {
+      requestAnimationFrame(animate);
+      const dt = clock.getDelta();
+      const elapsed = clock.getElapsedTime();
+
+      updateBoyMovement(dt, elapsed);
+      updateDevicesAnimation(dt, elapsed);
+
+      controls.update();
+      renderer.render(scene, camera);
+    }
+    animate();
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+  </script>
+</body>
+</html>
